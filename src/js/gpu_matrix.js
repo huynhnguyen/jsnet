@@ -30,6 +30,7 @@ single textures of ALPHA could be passed for different sizes.
 
 function gpu_matrix() {};
 
+
 gpu_matrix.prototype = {
 
 	__gpumatrix__: undefined,
