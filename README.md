@@ -1,2 +1,2 @@
-# jsnet
-another deep learning library with javascript and opengl
+#skynet
+not ready yet, dont wait your time here
