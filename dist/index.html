@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>start jsnet</title>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.3/math.js"></script> -->
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.3/math.map"></script> -->
+</head>
+<body>
+	<section tags="logistics, regression, classification">
+	</section>
+	<section tags="logistics, regression, classification">
+		
+	</section>
+</body>
+<script src="/lib/vendor.min.js"></script>
+<script src="/lib/skynet.js"></script>
+<script>
+	(()=>{
+		// const layer$1 = 
+
+		console.log('script start');
+		// console.log(Object.keys(Skynet.net));
+		var l1 = Skynet.net();
+		console.log(l1.sigmoid([2,3]));
+		l1.params.tolist();
+		// sigmoid._data[0][0] = 0;
+		// console.log(sigmoid._data);
+		// var sigmoid2 = Skynet.net().sigmoid();
+		// console.log(sigmoid2);
+		console.log(Skynet.helper().sayhello());
+	})();
+</script>
+</html>
