@@ -1,4 +1,4 @@
-var math = require('mathjs');
+var _ = require('underscore');
 var Helper = require('./skynet_helper')
 Log = Helper().logger;
 
@@ -12,39 +12,46 @@ const reindexing = (idx,volume)=>{
   return idx;
 }
 
-function numberjs(size){
-	this.shape = Object.assign([],size);
-	this.volum = size.reduce((a,b)=>a+b);
-	this.value = new Float32Array(this.volum);
+function numberjs(shape, value){
+	// TODO: support more than 2d array
+	this.shape = Object.assign([],shape);
+	this.volum = shape.reduce((a,b)=>a*b);
+	// this.mulup = size.map((d,i)=> i>0?size[i] + size[i-1]:size[i]);
+	this.value = value || new Float32Array(this.volum);
 	this.version = 0.1;
 }
 
 numberjs.prototype.tolist = function(){
-	Log(this.shape.reverse());
-	// const v = this.volum,
-	// 	  r = this.shape[0],
-	// 	  c = this.shape[1];
-	// let ret = [];
-	// for(let tr = 0, tc = 0, travel = 0;
-	// 		travel < this.volum;
-	// 		tr += 1, tc += 0|(tr/r), //increasing 
-	// 		tr %= r, tc %= c)
-	return 'tolist';
+	Log(this.value);
+	let list = this.shape.reverse().reduce((l,s)=>{
+	  ll = l.reduce(
+	    (d,v)=>{
+	      d.tmp.push(v);
+	      if(d.tmp.length===s){
+	        d.t.push(d.tmp);
+	        d.tmp = [];
+	      }
+	      return d;
+	    },{t:[],tmp:[]});
+	  return ll.t;
+	}, this.value)[0];
+	return list;
 }
 
-numberjs.prototype.transpose = (size)=>{
-	r = 2,c = 3;
-	// for(let xr=0, xc=0, yr=0, yc=0, counter=0;
-	//     counter<r*c; 
-	//     xc+=1,xr + \=0|(xc/c),xr%=r,xc%=c,
-	//     yr+=1, yc+=0|(yr/r), yr%=r,yc%=c){
-	//     counter += 1;
-	//     console.log(xr,xc,va[xr*c + xc]);
-	//     console.log(yr,yc,va[yr*c + yc]);
-	//     [va[xr*c + xc], va[yr*c + yc]] = [va[yr*c + yc], va[xr*c + xc]];  
-	//     console.log(va[xr*c + xc], va[yr*c + yc]);
-	//     // console.log(`[${xr}${xc}]: ${va[xr*c + xc]}`);
-	//   }
+numberjs.prototype.tanh = (a)=>{
+	val = a.value.map(d=>Math.tanh(d));
+	return new numberjs(a.shape,val);
+}
+numberjs.prototype.relu = (a)=>{
+	return null;	
+};
+numberjs.prototype.sigmoid = (a)=>{
+	val = a.value.map(d=>0.5*(Math.tanh(d)+1.0));
+	return new numberjs(a.shape,val);
+}
+
+numberjs.prototype.transpose = ()=>{
+	
 	return 'transpose';
 }
 
