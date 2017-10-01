@@ -1,2 +1,3 @@
-#skynet
-not ready yet, dont wait your time here
+# skynet
+
+not ready yet, don't wait your time here

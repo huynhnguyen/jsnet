@@ -1,6 +1,6 @@
 var _ = require('underscore');
 var math = require('mathjs');
-
+var Array
 const Helper = () => {
 	/**
 	* print the log to console with option type
