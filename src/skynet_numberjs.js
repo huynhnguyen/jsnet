@@ -18,6 +18,8 @@ const range = (start, end, step)=>{
     return _range;
 }
 
+const getLast = (arr, key)=> key?arr.slice(-1)[0][key]:arr.slice(-1)[0];
+
 const validateShape = (shapeA, shapeB)=>{
     if(''+shapeA !== ''+shapeB){
         throw Error('shape not consistent');
@@ -30,8 +32,14 @@ const clone = (refValue)=>{
 }
 
 const getVolume = (shape)=>{
-    return shape.reduce((a,b)=>a*b);
+    cumsum = shape.reverse()
+        .reduce((cs,d,i,sh)=>
+            cs.concat(i>0?getLast(cs)*sh[i-1]:1),
+        []).reverse();
+    return shape.map((d,i)=>{ return {sp:d,vol:cumsum[i]} })
 }
+// testShape = [2,2,3]
+// vol = getVolume(testShape) //[6,3,1]
 
 const convertSelector = (vals,shape)=>{
     let converted;
@@ -39,9 +47,10 @@ const convertSelector = (vals,shape)=>{
         converted = shape.map(d=>null);
         converted[0] = (vals>0)?vals:shape[0] + vals;
     }
+    //numpy like selector
     if(typeof vals === 'string'){
         converted = vals.split(',').map((v,i)=>{
-            if(v!==''){ return +v>0?+v:+v+shape[i]}
+            if(v!==':'){ return +v>0?+v:+v+shape[i]}
             else{ return null }
         });
     }
@@ -50,11 +59,19 @@ const convertSelector = (vals,shape)=>{
 
 Selector = {
   get:function(d, select){
-    let value = d[0], shape = d[1];
+    let value = d[0], shape = d[1], 
+        vl = getVolume(shape),
+        sp = getSpace(shape);
+    select = convertSelector(select, shape);
+    return range(0,vl,1).map((d,idx)=>{
+        select.reduce((idx/sp),
+    });
     console.log(d,idxs);
   },
   set:function(d, select,v){
     let value = d[0], shape = d[1];
+    select = convertSelector(select, shape);
+
     console.log(a,idxs,v);
   }
 }
