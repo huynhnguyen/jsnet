@@ -17,61 +17,138 @@ const range = (start, end, step)=>{
     }
     return _range;
 }
+// Log('[statTest] range')
+// s = new Date();
+// Log(range(0,1000,1).length === 1000);
+// r = new Date() - s;
+// Log('[endTest] runtime '+r+' ms');
 
-const getLast = (arr, key)=> key?arr.slice(-1)[0][key]:arr.slice(-1)[0];
-
-const validateShape = (shapeA, shapeB)=>{
-    if(''+shapeA !== ''+shapeB){
-        throw Error('shape not consistent');
-    }
+//*Immutable function*
+const reverse = (arr)=>arr.slice().reverse();
+const set  = (arr,i, key,value)=> {
+    let arrNew = arr.slice();
+    const idx  = remapIndex(i,arrNew.length);
+    if(key){ arrNewkey[idx].key = value; }
+    else{ arrNewkey[idx] = value; }
+    return arrNew;
 }
-
+const get  = (arr,i, key)=> key?arr.slice(i,i+1)[0][key]:arr.slice(i,i+1)[0];
+const getFirst = (arr, key)=> key?arr.slice(0,1)[0][key]:arr.slice(0,1)[0];
+const getLast  = (arr, key)=> key?arr.slice(-1)[0][key]:arr.slice(-1)[0];
 const clone = (refValue)=>{
     return (refValue instanceof Array)?
         Object.assign([],refValue):Object.assign({},refValue);
 }
 
-const getVolume = (shape)=>{
-    cumsum = shape.reverse()
-        .reduce((cs,d,i,sh)=>
+const validateShape = (shapeA, shapeB)=>{
+    if(''+shapeA !== ''+shapeB){ throw Error('shape not consistent') }
+}
+
+const getVolume = (shape)=>shape.reduce((a,b)=>a*b)
+const ShAndVol  = (shape)=>{
+    vol = reverse(shape).reduce((cs,d,i,sh)=>
             cs.concat(i>0?getLast(cs)*sh[i-1]:1),
         []).reverse();
-    return shape.map((d,i)=>{ return {sp:d,vol:cumsum[i]} })
+    return shape.map((d,i)=>{ return {sp:d,vol:vol[i]} })
 }
-// testShape = [2,2,3]
-// vol = getVolume(testShape) //[6,3,1]
+// Log('[statTest] ShAndVol')
+// s = new Date();
+// Log(ShAndVol([2,2,3])); //
+// r = new Date() - s;
+// Log('[endTest] runtime '+r+' ms')
 
-const convertSelector = (vals,shape)=>{
-    let converted;
-    if(typeof vals === 'number'){
-        converted = shape.map(d=>null);
-        converted[0] = (vals>0)?vals:shape[0] + vals;
-    }
-    //numpy like selector
-    if(typeof vals === 'string'){
-        converted = vals.split(',').map((v,i)=>{
-            if(v!==':'){ return +v>0?+v:+v+shape[i]}
-            else{ return null }
-        });
-    }
-    return converted;
+const remapIndex = (idx,s)=>{
+    idx = (idx>-1)?idx:s + idx
+    if(idx <0 || idx >= s){ throw Error('index invalid') }
+    else{ return idx }
 }
+// Log('[statTest] remapIndex')
+// s = new Date();
+// Log(remapIndex(0,4)); //0
+// Log(remapIndex(-5,4)); //error
+// r = new Date() - s;
+// Log(`[endTest] runtime ${r} ms`)
+
+const remapSelect = (sval, shape)=>{
+    //numpy like selector
+    vsp = sval.split(',');
+    if(vsp.length > shape.length){
+        throw Error('selector is not consitent with shape')
+    }
+    select = shape.map((s,i)=>{
+            let v = (i<vsp.length)?vsp[i]:':';
+            if(v===':') { return true}
+            else { return remapIndex(+v,s) } 
+        });
+    return select.map((d)=>(d===true)?d:range(d,d+1,1))
+}
+// Log('[statTest] remapSelect')
+// s = new Date();
+// Log(remapSelect('-1,:,2',[5,3,4])); //[[4],true,[2]]
+// Log(remapSelect('-1',[5,3,4])); //[[4],true,[2]]
+// r = new Date() - s;
+// Log('[endTest] runtime '+r+' ms');
+const isSelected = (idx, selector)=>
+        selector.reduce((f,s,i)=>
+            f&&( (s===true)?true:s.indexOf(idx[i])>-1),true)
+        
+// Log('[statTest] isSelected')
+// s = new Date();
+// Log(isSelected([0],[[1,2]])); //false
+// Log(isSelected([1],[[1,2]])); //true
+// Log(isSelected([1],[true]));  //true
+// r = new Date() - s;
+// Log('[endTest] runtime '+r+' ms')
+
+function *indexGenerator(shape, selector, counter){
+    let i = 0, c = 0,  vl = ShAndVol(shape),
+        vol = getVolume(shape);
+    selector = selector?selector:[true];
+    for(;i<vol;i++){
+        idx = vl.map( o => ((i/o.vol)|0)%o.sp );
+        if(isSelected(idx,selector)){
+            if(!counter){ yield idx; }
+            else{  
+                yield {'c': c, 'idx': idx};
+                c += 1;
+            }
+        }
+    }
+}
+
+Log('[statTest] indexGenerator')
+s = new Date();
+for(let idx of indexGenerator([2,3],false,true)){
+    console.log(idx);
+}
+for(let idx of indexGenerator([2,3],[[0]])){
+    Log(idx);
+}
+for(let idx of indexGenerator([2,3],[[0]],true)){
+    Log(idx);
+}
+r = new Date() - s;
+Log('[endTest] runtime ' + r + ' ms')
 
 Selector = {
-  get:function(d, select){
-    let value = d[0], shape = d[1], 
-        vl = getVolume(shape),
-        sp = getSpace(shape);
-    select = convertSelector(select, shape);
-    return range(0,vl,1).map((d,idx)=>{
-        select.reduce((idx/sp),
-    });
-    console.log(d,idxs);
+  get:function(d, selectString){
+    console.log(d);
+    value = d.v, shape = d.s; 
+    selector = remapSelect(selectString, shape);
+    console.log('selectMaped',selector);
+    shapeNew = selector.map((d,i)=>(d===true)?shape[i]:d.length);
+    console.log(shapeNew);
+    valueNew = new Float32Array(getVolume(shapeNew));
+    for(let px in indexGenerator(shape, selector, true)){
+        idx = px.idx, c = px.c;
+        vx = reverse(idx).reduce((v,d,i)=>v+d*shape[i]);
+        valueNew[c] = value[vx]; 
+    }
+    return new numberjs(shapeNew, valueNew);
   },
-  set:function(d, select,v){
+  set:function(d, selectString,v){
     let value = d[0], shape = d[1];
     select = convertSelector(select, shape);
-
     console.log(a,idxs,v);
   }
 }
@@ -79,16 +156,15 @@ Selector = {
 function numberjs(shape, value){
     // TODO: support more than 2d array
     this.shape  = clone(shape);
+    console.log(this.shape);
     this.volume = getVolume(shape);
-    // this.mulup = size.map((d,i)=> i>0?size[i] + size[i-1]:size[i]);
     this.value   = value || new Float32Array(this.volume);
     this.version = 0.1;
-
+    this.v = new Proxy({v:this.value, s:this.shape}, Selector);
 }
 
 numberjs.prototype.tolist = function(){
-    Log(this.value);
-    let list = this.shape.reverse().reduce((l,s)=>{
+    let list = reverse(this.shape).reduce((l,s)=>{
       ll = l.reduce(
         (d,v)=>{
           d.tmp.push(v);
@@ -174,14 +250,6 @@ numberjs.prototype.div = (a,b)=>{
     const mapping = validateOps(a,b);
     let value = mapping(a, b, divOp);     
     return new numberjs(a.shape, value);
-};
-
-numberjs.prototype.get = function(idxs){
-    return 0;
-};
-
-numberjs.prototype.set = function(idxs, value){
-    return 0;
 };
 
 numberjs.prototype.dot = function(A,B){

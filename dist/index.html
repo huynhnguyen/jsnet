@@ -5,6 +5,7 @@
 </head>
 <body>
 	<section tags="numberjs">
+		<div id="print"></div>
 	</section>
 	<section tags="logistics, regression, classification">
 		
@@ -15,8 +16,12 @@
 <script>
 	(()=>{
 		console.log('script start');
-		let v1 = Skynet.nb([2,3]);
+		let v1 = Skynet.nb([4,6]);
 		console.log(v1.tolist());
+		console.log(v1.v[':,3'].tolist());
+		// v1.tolist().map((d,i)=>{
+
+		// });
 		// console.log(v1.tolist());
 		// // console.log(v1.reshape([2,2]));
 		// console.log(v1.reshape([6,1]));

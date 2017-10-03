@@ -1,6 +1,4 @@
 var _ = require('underscore');
-var math = require('mathjs');
-var Array
 const Helper = () => {
 	/**
 	* print the log to console with option type
@@ -29,11 +27,4 @@ const Helper = () => {
 	}
 }
 module.exports = Helper;
-// (function(lib) {
-//   "use strict";
-//   if (typeof module === "undefined" || typeof module.exports === "undefined") {
-//     window.convnetjs = lib; // in ordinary browser attach library to window
-//   } else {
-//     module.exports = lib; // in nodejs
-//   }
-// })(skynet);
+// module.exports = Immutable;
