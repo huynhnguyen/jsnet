@@ -27,7 +27,7 @@ const range = (start, end, step)=>{
 const reverse = (arr)=>arr.slice().reverse();
 const set  = (arr,i, key,value)=> {
     let arrNew = arr.slice();
-    const idx  = remapIndex(i,arrNew.length);
+    const idx  = remapIndex(i, arrNew.length);
     if(key){ arrNewkey[idx].key = value; }
     else{ arrNewkey[idx] = value; }
     return arrNew;
@@ -88,6 +88,7 @@ const remapSelect = (sval, shape)=>{
 // Log(remapSelect('-1',[5,3,4])); //[[4],true,[2]]
 // r = new Date() - s;
 // Log('[endTest] runtime '+r+' ms');
+
 const isSelected = (idx, selector)=>
         selector.reduce((f,s,i)=>
             f&&( (s===true)?true:s.indexOf(idx[i])>-1),true)
@@ -116,52 +117,111 @@ function *indexGenerator(shape, selector, counter){
     }
 }
 
-Log('[statTest] indexGenerator')
-s = new Date();
-for(let idx of indexGenerator([2,3],false,true)){
-    console.log(idx);
+// Log('[statTest] indexGenerator')
+// s = new Date();
+// for(let idx of indexGenerator([2,3],false,true)){
+//     console.log(idx);
+// }
+// for(let idx of indexGenerator([2,2],[true,[1]],true)){
+//     Log(idx);
+// }
+// for(let idx of indexGenerator([2,3],[[0]],true)){
+//     Log(idx);
+// }
+// r = new Date() - s;
+// Log('[endTest] runtime ' + r + ' ms')
+
+const ravel = (a) => a.reduce((s,a)=>{return (a instanceof Array)?s.concat(ravel(a)):s.concat(a)},[]);
+
+const getAtFunc = (value)=>{
+    if(typeof value === 'number'){
+        return {getAt:(value,counter)=>value};
+    }
+    if(a instanceof Array){
+        let valueFlatten = ravel(value);
+        return {getAt:(value,counter)=>value[counter]};
+    }
+    if(a instanceof numberjs){
+        let v = value.value;
+        return {getAt:(value,counter)=>v[counter]};
+    }
 }
-for(let idx of indexGenerator([2,3],[[0]])){
-    Log(idx);
-}
-for(let idx of indexGenerator([2,3],[[0]],true)){
-    Log(idx);
-}
-r = new Date() - s;
-Log('[endTest] runtime ' + r + ' ms')
 
 Selector = {
   get:function(d, selectString){
-    console.log(d);
     value = d.v, shape = d.s; 
     selector = remapSelect(selectString, shape);
-    console.log('selectMaped',selector);
-    shapeNew = selector.map((d,i)=>(d===true)?shape[i]:d.length);
-    console.log(shapeNew);
+    shapeNew = selector.map((d,i)=>(d===true)?shape[i]:d.length).filter(d=>d>1);
     valueNew = new Float32Array(getVolume(shapeNew));
-    for(let px in indexGenerator(shape, selector, true)){
+    for(let px of indexGenerator(shape, selector, true)){
         idx = px.idx, c = px.c;
-        vx = reverse(idx).reduce((v,d,i)=>v+d*shape[i]);
-        valueNew[c] = value[vx]; 
+        vdx = reverse(idx).reduce((v,d,i)=>v+d*shape[i]);
+        valueNew[c] = value[vdx]; 
     }
-    return new numberjs(shapeNew, valueNew);
+    return new numberjs(valueNew, shapeNew);
   },
-  set:function(d, selectString,v){
-    let value = d[0], shape = d[1];
-    select = convertSelector(select, shape);
-    console.log(a,idxs,v);
+  set:function(d, selectString, newValue){
+    value = d.v, shape = d.s; 
+    selector = remapSelect(selectString, shape);
+    const getAtFunc = (value)=>{
+        if(typeof value === 'number'){
+            return {getAt:(counter)=>value};
+        }
+        if(value instanceof Array){
+            //TODO: implement check shape
+            let valueFlatten = ravel(value);
+            return {getAt:(counter)=>value[counter]};
+        }
+        if(value instanceof numberjs){
+            //TODO: implement check shape
+            let v = value.value;
+            return {getAt:(counter)=>v[counter]};
+        }
+    }
+    func = getAtFunc(newValue);
+    for(let px of indexGenerator(shape, selector, true)){
+        idx = px.idx, c = px.c;
+        vx  = reverse(idx).reduce((v,d,i)=>v+d*shape[i]);
+        // Log([vx, newValue]);
+        value[vx] = func.getAt(c);
+    }
+    return d;
   }
 }
 
-function numberjs(shape, value){
-    // TODO: support more than 2d array
-    this.shape  = clone(shape);
-    console.log(this.shape);
-    this.volume = getVolume(shape);
-    this.value   = value || new Float32Array(this.volume);
+const getShape = (arr)=>(typeof arr === 'number')?
+    null:[arr.length].concat(getShape(arr[0])).filter(d=>d)
+// Log('[statTest] getShape')
+// s = new Date();
+// Log(getShape([2,2])); //2
+// Log(getShape([[2,2],[1,1]])); //[2,2]
+// r = new Date() - s;
+// Log('[endTest] runtime '+r+' ms')
+
+function numberjs(value, shape){
+    if(shape){
+        this.shape  = clone(shape);
+        this.volume = getVolume(this.shape);
+        this.value  = value;
+    }
+    else if(value){
+        _shape  = getShape(value);
+        this.shape = clone(_shape);
+        this.volume = getVolume(this.shape);
+        this.value  = new Float32Array(this.volume);
+        for(let px of indexGenerator(this.shape,false,true)){
+            let idx = px.idx, c = px.c;
+            this.value[c] = idx.reduce((v,i)=>v[i],value);
+        }
+    }
+    else{
+        //TODO: this is op instance
+        this.grad = null;
+    }
     this.version = 0.1;
     this.v = new Proxy({v:this.value, s:this.shape}, Selector);
 }
+
 
 numberjs.prototype.tolist = function(){
     let list = reverse(this.shape).reduce((l,s)=>{
@@ -179,6 +239,18 @@ numberjs.prototype.tolist = function(){
     return list;
 }
 
+numberjs.prototype.T = function(){
+    let shapeNew = reverse(this.shape);
+    let valueNew = new Float32Array(getVolume(shapeNew));
+    for(let px of indexGenerator(shapeNew, false, true)){
+        idx = px.idx, c = px.c;
+        rix = reverse(idx);
+        vdx = reverse(rix).reduce((v,d,i)=>v+d*this.shape[i]);
+        valueNew[c] = this.value[vdx]; 
+    }
+    return new numberjs(valueNew, shapeNew);
+};
+
 numberjs.prototype.reshape = function(newShape){
     validateShape(this.shape, newShape);    
     this.shape = clone(newShape);
@@ -187,7 +259,7 @@ numberjs.prototype.reshape = function(newShape){
 
 numberjs.prototype.tanh = (a)=>{
     let val = a.value.map(d=>Math.tanh(d));
-    return new numberjs(a.shape,val);
+    return new numberjs(val, a.shape);
 }
 
 numberjs.prototype.relu = (a)=>{
@@ -196,13 +268,9 @@ numberjs.prototype.relu = (a)=>{
 
 numberjs.prototype.sigmoid = (a)=>{
     val = a.value.map(d=>0.5*(Math.tanh(d)+1.0));
-    return new numberjs(a.shape,val);
+    return new numberjs(val, a.shape);
 }
 
-numberjs.prototype.transpose = function(){
-    this.shape = this.shape.reverse(); 
-    return 'transpose';
-}
 const vecMapping = (vA, vB, ops)=>{
     validateShape(vA.shape, vB.shape);
     return vA.map((d,i)=>ops(vA[i],yB[i]));
@@ -213,12 +281,12 @@ const numMapping = (vA, n, ops)=>{
 }
 
 const validateOps = (objA, objB)=>{
-    if(   objA instanceof 'numberjs' 
-       && objB instanceof 'numberjs' ){
+    if(   typeof objA === 'numberjs' 
+       && typeof objB === 'numberjs' ){
         return vecMapping;
     }
-    if(   objA instanceof 'numberjs' 
-       && objB instanceof 'number' ){
+    if(   typeof objA === 'numberjs' 
+       && typeof objB === 'number' ){
         return numMapping;
     }
     throw Error('invalide objet input');
@@ -228,39 +296,53 @@ numberjs.prototype.add = (a,b)=>{
     const addOp   = (d1,d2)=>d1+d2;
     const mapping = validateOps(a,b);
     let value = mapping(a, b, addOp);
-    return new numberjs(a.shape, value);
+    return new numberjs(value, a.shape);
 };
 
 numberjs.prototype.minus = (a,b)=>{
     const minusOp = (d1,d2)=>d1-d2;
     const mapping = validateOps(a,b);
     let value = mapping(a, b, minusOp);
-    return new numberjs(a.shape, value);
+    return new numberjs(value, a.shape);
 };
 
 numberjs.prototype.mul = (a,b)=>{
     const mulOp   = (d1,d2)=>d1*d2;
     const mapping = validateOps(a,b);
     let value = mapping(a, b, mulOp);        
-    return new numberjs(a.shape, value);  
+    return new numberjs(value, a.shape);  
 };
 
 numberjs.prototype.div = (a,b)=>{
     const divOp   = (d1,d2)=>d1/d2;
     const mapping = validateOps(a,b);
     let value = mapping(a, b, divOp);     
-    return new numberjs(a.shape, value);
+    return new numberjs(value, a.shape);
 };
 
-numberjs.prototype.dot = function(A,B){
-    //currently only support 2 dim
-    for(axis in rangeGenerator(A.shape[0])){
-
+const validateDotOps = (objA, objB)=>{
+    if(   typeof objA === 'numberjs' 
+       && typeof objB === 'numberjs' ){
+        return DotvecMapping;
     }
+    if(   typeof objA === 'numberjs' 
+       && typeof objB === 'number' ){
+        return DotnumMapping;
+    }
+    if(   typeof objA === 'numberjs' 
+       && typeof objB === 'number' ){
+        return DotnumMapping;
+    }
+    throw Error('invalide objet input');
+}
+
+numberjs.prototype.dot = function(a,b){
+    validateDotShape(a.shape,b.shape);
+    
 };
 
 
-function Numberjs(shape, value){
-    return new numberjs(shape, value);
+function Numberjs(value, shape){
+    return new numberjs(value, shape);
 }
 module.exports = Numberjs;

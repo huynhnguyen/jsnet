@@ -16,13 +16,24 @@
 <script>
 	(()=>{
 		console.log('script start');
-		let v1 = Skynet.nb([4,6]);
-		console.log(v1.tolist());
-		console.log(v1.v[':,3'].tolist());
-		// v1.tolist().map((d,i)=>{
-
-		// });
-		// console.log(v1.tolist());
+		let v1 = Skynet.nb([[4,6,5],[1,3,9]]);
+		
+		// console.log('TEST GET/SET')
+		// console.log(v1.v[':,1'].tolist());
+		// v1.v[':,1'] = 2;
+		// console.log(v1.v[':,1'].tolist());
+		// v1.v[':,1'] = [1, 2];
+		// console.log(v1.v[':,1'].tolist());
+		// let v2 = Skynet.nb([-1,3]);
+		// v1.v[':,1'] = v2;
+		// console.log(v1.v[':,1'].tolist());
+		// let v2 = Skynet.nb([[[4],[6],[5]],[[1],[3],[9]]]);
+		// console.log(v2.shape);
+		// console.log(v2.tolist());
+		let v2 = v1.T();
+		op_dot = Skynet.nb().dot;
+		console.log(op_dot(v1,v2));
+		
 		// // console.log(v1.reshape([2,2]));
 		// console.log(v1.reshape([6,1]));
 		// console.log(v1.tolist());
