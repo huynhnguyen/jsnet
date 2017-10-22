@@ -2,13 +2,14 @@ const WebpackDevServer = require('webpack-dev-server');
 const webpack = require('webpack');
 const pkg     = require('./package.json');
 const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
+const HtmlWebpackPlugin = require('html-webpack-plugin'); //installed via npm
 const path = require('path');
-const env = require('yargs').argv.env; // use --env with webpack 2
+const env = require('yargs').argv.env;
 
 let libraryName = 'skynet';
 
 let outputFile;
-
+let plugins = [];
 if (env === 'build') {
   plugins.push(new UglifyJsPlugin({ minimize: true }));
   outputFile = libraryName + '.min.js';
@@ -19,8 +20,8 @@ const PORT = 3000;
 const config = {
   entry: 
   {
-  	main  :  __dirname + '/src/index.js',
-  	vendor: ['mathjs','underscore']
+  	'lib/number'   :  __dirname + '/src/number/number.js',
+    'lib/operators' :  __dirname + '/src/number/operators.js',
   },
   devtool: 'source-map',
   devServer: {
@@ -30,9 +31,10 @@ const config = {
      inline: true
   },
   output: {
-    path: __dirname + '/dist/lib',
+    path: __dirname + '/dist/',
     publicPath: '/dist/',
     filename: outputFile,
+    filename: '[name].js',
     library: libraryName,
     libraryTarget: 'umd',
     umdNamedDefine: true
@@ -56,9 +58,17 @@ const config = {
     extensions: ['.json', '.js']
   },
   plugins: [
-    //Finally add this line to bundle the vendor code separately
-    new webpack.optimize.CommonsChunkPlugin({name: 'vendor', filename: 'vendor.min.js'})
-    // new html({template : __dirname + '/8888/index.html'})
+    new webpack.NoEmitOnErrorsPlugin(),
+    new HtmlWebpackPlugin({
+        filename: 'index.html',
+        template: './src/index.html',
+        // inject: false
+    }),
+    new webpack.ProvidePlugin({
+        $: "jquery",
+        jQuery: "jquery"
+    }),
+    new webpack.HotModuleReplacementPlugin()
   ]
 };
 console.log(Object.keys(pkg.dependencies));

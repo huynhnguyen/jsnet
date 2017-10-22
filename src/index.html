@@ -2,28 +2,62 @@
 <html>
 <head>
 	<title>start jsnet</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.3/math.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 </head>
 <body>
-	<section tags="logistics, regression, classification">
-	</section>
-	<section tags="logistics, regression, classification">
-		
-	</section>
+	<div id="log"></div>
 </body>
-<script src="/lib/vendor.min.js"></script>
-<script src="/lib/skynet.js"></script>
 <script>
 	(()=>{
-		console.log('script start');
-		// console.log(Object.keys(Skynet.net));
-		var l1 = Skynet.net();
-		console.log(l1.sigmoid([2,3]));
-		console.log(l1.params.tolist());
-		// sigmoid._data[0][0] = 0;
-		// console.log(sigmoid._data);
-		// var sigmoid2 = Skynet.net().sigmoid();
-		// console.log(sigmoid2);
-		console.log(Skynet.helper().sayhello());
+		console.log('script start now');
+		const print = (msg)=>{
+			console.log(msg);
+			$('#log').html(msg);
+		}
+		const print2DMat = (mat)=>{
+			mat.map((d,i)=>console.log(i+': '+d));
+		}
+		var nb = Number([[1,2],[2,3]]);
+		print2DMat(nb.tolist());
+
+		var nb2 = Number([ [1, 2, 3, 4],
+						   [5, 6, 7, 8], 
+						   [9, 10, 11, 12] ]);
+		var nb3 = nb2.v[':,2'];	
+		print2DMat(nb3.tolist());
+
+		var nA = Number([[1,2],
+						 [2,3],
+						 [3,4]]);
+		
+		var nB = Number([[1,2,3],
+						 [2,3,4]]);
+
+		var nC = Operators.dot(nA,nB);
+		print2DMat(nC.tolist());
+		var nE = Number([[1,2,3,4,5,6],
+						 [7,8,9,10,11,12],
+						 [13,14,15,16,17,18]]);
+		var nD = Operators.T(nE);
+		print2DMat(nD.tolist());
+		function benchMark(shA,shB){
+			const genMat = (r,c)=>_.range(r).map(()=>_.range(c).map(()=>Math.random()));
+			let lA = genMat(...shA), lB = genMat(...shB);
+			let matA = math.matrix(lA);
+			let matB = math.matrix(lB);
+			console.time('mul');
+			let matV = math.multiply(matA, matB);
+			console.timeEnd('mul');
+			let ndA = Number(lA);
+			let ndB = Number(lB);
+			console.time('skynet mul');
+			let ndC = Operators.dot(ndA, ndB);
+			console.timeEnd('skynet mul');
+		}
+		benchMark([20,30],[30,40]);
+		benchMark([40,60],[60,80]);
+		benchMark([512,512],[512,512]);
 	})();
 </script>
 </html>
