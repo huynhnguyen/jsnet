@@ -4,6 +4,7 @@ const pkg     = require('./package.json');
 const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 const HtmlWebpackPlugin = require('html-webpack-plugin'); //installed via npm
 const path = require('path');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 const env = require('yargs').argv.env;
 
 let libraryName = 'skynet';
@@ -21,7 +22,8 @@ const config = {
   entry: 
   {
   	'lib/number'   :  __dirname + '/src/number/number.js',
-    'lib/operators' :  __dirname + '/src/number/operators.js',
+    'lib/operators':  __dirname + '/src/number/operators.js',
+    'lib/autograd':  __dirname + '/src/number/autograd/autograd.js'
   },
   devtool: 'source-map',
   devServer: {
@@ -33,7 +35,9 @@ const config = {
   output: {
     path: __dirname + '/dist/',
     publicPath: '/dist/',
-    filename: outputFile,
+    hotUpdateChunkFilename: 'hot/hot-update.js',
+    hotUpdateMainFilename: 'hot/hot-update.json',
+    // filename: outputFile,
     filename: '[name].js',
     library: libraryName,
     libraryTarget: 'umd',
@@ -62,6 +66,16 @@ const config = {
     new HtmlWebpackPlugin({
         filename: 'index.html',
         template: './src/index.html',
+        // inject: false
+    }),
+    new HtmlWebpackPlugin({
+        filename: 'autograd.html',
+        template: './src/autograd.html',
+        // inject: false
+    }),
+    new HtmlWebpackPlugin({
+        filename: 'benchmark.html',
+        template: './src/benchmark.html',
         // inject: false
     }),
     new webpack.ProvidePlugin({

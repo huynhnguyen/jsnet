@@ -10,57 +10,33 @@ if (typeof module !== 'undefined') {
 if (typeof window !== 'undefined') {
   window.Operators = Operators;
 }
-Operators.prototype.dotF = function(nbA,nbB){
-  // validateDotShape(a.shape,b.shape);
-  const sA = nbA.shape, sB = nbB.shape;
-  let newShape = sA.slice(0,-1).concat(sB.slice(-1))
-  let newValue = new Float32Array(nd.getVolume(newShape));
-  const selector = newShape.map(d=>[0,d,1]);
-  for(let [px,c] of nd.enummerate( nd.indexGenerator(selector, nd.getSpace(newShape)) ) ){
-      // const idx = px.idx, vx = px.vx;
-      // let aSelector = idx.map((d,i,_idx)=>(i != _idx.length-1)?d:[0,sA[i],1]);
-      // let bSelector = idx.map((d,i,_idx)=>(i != _idx.length-2)?d:[0,sB[i],1]);
-      // // console.log(idx,vx,aSelector,bSelector);
-      // let aV = [],bV = [];
-      // for( let apx of nd.indexGenerator(aSelector, nbA.space) ){
-      //   // Log(['aLog', ''+apx.idx, apx.c, a.value[apx.vx]]);
-      //   aV.push(nbA.value[apx.vx]);
-      // };
-      // for( let bpx of nd.indexGenerator(bSelector, nbB.space) ){
-      //   // Log(['bLog', ''+bpx.idx, bpx.c, b.value[bpx.vx]]);
-      //   bV.push(nbB.value[bpx.vx]);
-      // };
-      // newValue[c] = aV.reduce((tt,a,i)=>tt+aV[i]*bV[i],0);
-  }
-  return Number(newValue, newShape);
-};
+
 Operators.dot = function(nbA,nbB){
-    // validateDotShape(a.shape,b.shape);
     const sA = nbA.shape, sB = nbB.shape;
-    let newShape = sA.slice(0,-1).concat(sB.slice(-1))
+    const pA = nbA.space, pB = nbB.space;
+    let newShape = sA.slice(0,-1).concat( sB.slice(-1) );
     let newValue = new Float32Array(nd.getVolume(newShape));
-    // console.log(['newShape', newShape]);
-    // console.log(nbA.value, nbA.space);
-    // console.log(nbB.value, nbB.space);
     
     const selector = newShape.map(d=>[0,d,1]);
-    for(let [px,c] of nd.enummerate( nd.indexGenerator(selector, nd.getSpace(newShape)) ) ){
-      const idx = px.idx, vx = px.vx;
-      let aSelector = idx.map((d,i,_idx)=>(i != _idx.length-1)?d:[0,sA[i],1]);
-      let bSelector = idx.map((d,i,_idx)=>(i != _idx.length-2)?d:[0,sB[i],1]);
-      let aV = [],bV = [];
-      for( let apx of nd.indexGenerator(aSelector, nbA.space) ){
-        aV.push(nbA.value[apx.vx]);
-      };
-      for( let bpx of nd.indexGenerator(bSelector, nbB.space) ){
-        bV.push(nbB.value[bpx.vx]);
-      };
-      newValue[c] = aV.reduce((tt,a,i)=>tt+aV[i]*bV[i],0);
+    const Aaxis = sA.length-1, Baxis = sB.length-2;
+    const nS = sA[Aaxis]===sB[Baxis]?sA[Aaxis]:null;
+    if(nS===null){ throw Error('shape not consitent') }
+    for(let px of nd.indexGenerator(selector, nd.getSpace(newShape) ) ){
+      let idx  = px.idx, vx = px.vx;
+      let adx  = idx.slice(), bdx = idx.slice();
+      let aV$_ = adx.reduce((s,d,i)=>(i==Aaxis)?s:s+d*pA[i], 0);
+      let bV$_ = bdx.reduce((s,d,i)=>(i==Baxis)?s:s+d*pB[i], 0);
+      let aVx  = 0, bVx = 0;
+      for(let v = 0; v < nS; v += 1){
+        aVx = aV$_ + v*pA[Aaxis];
+        bVx = bV$_ + v*pB[Baxis];
+        newValue[vx] += nbA.value[aVx]*nbB.value[bVx];
+      }
   }
   return Number(newValue, newShape);
 };
 
-Operators.T = function(nbA){
+Operators.T = (nbA)=>{
     // validateDotShape(a.shape,b.shape);
     const sA = nbA.shape, space = nbA.space;
     let newShape = sA.slice().reverse();
@@ -72,4 +48,77 @@ Operators.T = function(nbA){
       newValue[vx] = nbA.value[rvx];
   }
   return Number(newValue, newShape);
+};
+
+Operators.pow = (nd, hat)=>{
+  let newValue = nd.value.map(d=>d**(hat));
+  return Number(newValue, nd.shape);
+}
+
+Operators.exp = (nd)=>{
+  let newValue = nd.value.map(d=>Math.exp(d));
+  return Number(newValue, nd.shape);
+}
+
+Operators.tanh = (nd)=>{
+  let newValue = nd.value.map(d=>Math.tanh(d));
+  return Number(newValue, nd.shape);
+}
+
+Operators.sigmoid = (nd)=>{
+  let newValue = nd.value.map(d=>0.5*(Math.tanh(d)+1.0));
+  return Number(newValue, nd.shape);
+}
+
+Operators.relu = (a)=>{
+  throw Error('not implement');
+};
+
+const validateOps = (nbA, valB)=>{
+  const vecMapping = (ndA, ndB, ops)=>{
+    let vA = ndA.value, vB = ndB.value;
+    return vA.map((d,i)=>ops(vA[i], vB[i]));
+  }
+
+  const numMapping = (ndA, vB, ops)=>{
+    let vA = ndA.value;
+    return vA.map((d,i)=>ops(d,vB));
+  }
+  console.warn(typeof nbA, typeof valB);
+  if( Number().isNumber(nbA) && typeof valB === 'number' ){
+    return numMapping;
+  }
+  if( Number().isNumber(nbA) && Number().isNumber(valB) ){
+    return vecMapping;
+  }
+  throw Error('invalide object type');
+}
+
+Operators.add = (a,b)=>{
+  
+  const addOp   = (d1,d2)=>d1+d2;
+  const mapping = validateOps(a,b);
+  let newValue  = mapping(a, b, addOp);
+  return Number(newValue, a.shape);
+};
+
+Operators.minus = (a,b)=>{
+  const minusOp = (d1,d2)=>d1-d2;
+  const mapping = validateOps(a,b);
+  let newValue  = mapping(a, b, minusOp);
+  return Number(newValue, a.shape);
+};
+
+Operators.mul = (a,b)=>{
+  const mulOp   = (d1,d2)=>d1*d2;
+  const mapping = validateOps(a,b);
+  let newValue  = mapping(a, b, mulOp);        
+  return Number(newValue, a.shape);  
+};
+
+Operators.div = (a,b)=>{
+  const divOp   = (d1,d2)=>d1/d2;
+  const mapping = validateOps(a,b);
+  let newValue  = mapping(a, b, divOp);     
+  return Number(newValue, a.shape);
 };

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Auto gradient</title>
+</head>
+<body>
+
+</body>
+<script type="text/javascript">
+	(()=>{
+		console.log(Date(), 'script start');
+		let nb = Number([1]);
+		console.table(nb.value);
+		let nb$add2  = Operators.add(nb, 4);
+		console.table(nb$add2.value);
+		function myAdd(nd){
+			return Operators.add(nd, 2);
+		}
+		let grad = Autograd.grad(myAdd);
+		console.table( grad(nb).value );
+	})();
+</script>
+</html>

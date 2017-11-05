@@ -2,7 +2,8 @@
 const getShape  = (arr)=>(typeof arr === 'number')?
 	null:[arr.length].concat(getShape(arr[0])).filter(d=>d);
 
-const getSpace = (shape)=>shape.slice().reverse().reduce((ss,d,i)=>(i>0)?[...ss,ss.slice(-1)[0]*shape[i]]:[1],[]).reverse()
+const getSpace = (shape)=>shape.reduceRight((ss,d,i,shape)=>
+	  (i==shape.length-1)?[1]:[ ss[0]*shape[i+1],...ss],[])
 
 // shape = [4,3,4];
 // console.log(getSpace(shape));
@@ -64,6 +65,15 @@ function *indexGenerator(selector, space, axis, idx){
   }
 }
 
+function *_indexGenerator(_selector, space, axis, idx){
+  	let [l,h,s] = _selector;
+  	while(l < h){
+  	  idx[axis] = l;	
+      yield {idx:idx,vx:idx.reduce((s,d,i)=>s+d*space[i],0)};
+      l += s;
+    }
+}
+
 function *enummerate(generator){
   let i = 0;
   for(let v of generator){
@@ -72,6 +82,10 @@ function *enummerate(generator){
   }
 }
 
+const ravel = (a) => a.reduce((s,a)=>{
+		return (a instanceof Array)?s.concat(ravel(a)):s.concat(a)
+	},[]);
+
 const ndarray = {
 	'getShape' : getShape,
 	'getSpace' : getSpace,
@@ -79,6 +93,8 @@ const ndarray = {
 	'clone': clone,
 	'remapSelect':remapSelect,
 	'indexGenerator': indexGenerator,
-	'enummerate': enummerate
+	'_indexGenerator': _indexGenerator,
+	'enummerate': enummerate,
+	'ravel':ravel
 }
 module.exports = ndarray;
