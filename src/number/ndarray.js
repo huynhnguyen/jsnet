@@ -2,13 +2,17 @@
 const getShape  = (arr)=>(typeof arr === 'number')?
 	null:[arr.length].concat(getShape(arr[0])).filter(d=>d);
 
-const getSpace = (shape)=>shape.reduceRight((ss,d,i,shape)=>
-	  (i==shape.length-1)?[1]:[ ss[0]*shape[i+1],...ss],[])
+const getSpace = (shape)=>shape.length==0?
+		1:shape.reduceRight(
+			(ss,d,i,shape)=>(i==shape.length-1)?
+				[1]:[ ss[0]*shape[i+1],...ss],[]
+		)
 
 // shape = [4,3,4];
 // console.log(getSpace(shape));
 
-const getVolume = (shape)=>shape.reduce((a,b)=>a*b);
+const getVolume = (shape)=>shape.length==0?
+		[]:shape.reduce((a,b)=>a*b);
 
 const clone = (refValue)=>{
   return (refValue instanceof Array)?

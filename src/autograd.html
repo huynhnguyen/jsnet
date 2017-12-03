@@ -9,15 +9,18 @@
 <script type="text/javascript">
 	(()=>{
 		console.log(Date(), 'script start');
-		let nb = Number([1]);
+		let nb = Number([2]);
 		console.table(nb.value);
 		let nb$add2  = Operators.add(nb, 4);
 		console.table(nb$add2.value);
-		function myAdd(nd){
-			return Operators.add(nd, 2);
+		function myFunc(nd){
+			let nd2 = Operators.tanh(nd);
+			return Operators.tanh(nd2);
 		}
-		let grad = Autograd.grad(myAdd);
-		console.table( grad(nb).value );
+		let grad = Autograd.grad(myFunc);
+		console.warn('gradient');
+		let [ _grad, _ret ] = grad(nb);
+		console.table( _grad[0] );
 	})();
 </script>
 </html>

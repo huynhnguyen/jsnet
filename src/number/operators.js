@@ -14,10 +14,21 @@ if (typeof window !== 'undefined') {
 Operators.dot = function(nbA,nbB){
     const sA = nbA.shape, sB = nbB.shape;
     const pA = nbA.space, pB = nbB.space;
+
+    if( sA.length==1 && sB.length==1){
+      let newShape = [1];
+      let newValue = new Float32Array(1);
+      const nS = sA[0]===sB[0]?sA[0]:null;
+      if(nS===null){ throw Error('shape not consitent') }  
+      for(let v = 0; v < nS;v++){
+        newValue[0] += nbA.value[v]*nbB.value[v];  
+      }
+      return Number(newValue, newShape);
+    }
     let newShape = sA.slice(0,-1).concat( sB.slice(-1) );
     let newValue = new Float32Array(nd.getVolume(newShape));
-    
     const selector = newShape.map(d=>[0,d,1]);
+
     const Aaxis = sA.length-1, Baxis = sB.length-2;
     const nS = sA[Aaxis]===sB[Baxis]?sA[Aaxis]:null;
     if(nS===null){ throw Error('shape not consitent') }
@@ -51,22 +62,34 @@ Operators.T = (nbA)=>{
 };
 
 Operators.pow = (nd, hat)=>{
-  let newValue = nd.value.map(d=>d**(hat));
+  let newValue = nd.value.map(d=>Math.pow(d,hat));
   return Number(newValue, nd.shape);
 }
 
 Operators.exp = (nd)=>{
   let newValue = nd.value.map(d=>Math.exp(d));
-  return Number(newValue, nd.shape);
+  let ret      = Number(newValue, nd.shape);
+  if(nd.grad){
+    ret.grad = [{ father: nd.grad, 
+      vjp_op: (x)=>Math.exp(x) }]
+  }
+  return ret;
 }
 
 Operators.tanh = (nd)=>{
   let newValue = nd.value.map(d=>Math.tanh(d));
-  return Number(newValue, nd.shape);
+  let ret      = Number(newValue, nd.shape);
+  if(nd.grad){
+    const vjp_op = (x)=>1 - Math.pow(Math.tanh(x),2)
+    ret.grad = [{ bw: nd, vid: nd.vid,
+                  vjp: Number(nd.value.map(d=>vjp_op(d)), nd.shape)}]
+  }
+  return ret;
 }
 
 Operators.sigmoid = (nd)=>{
   let newValue = nd.value.map(d=>0.5*(Math.tanh(d)+1.0));
+
   return Number(newValue, nd.shape);
 }
 
