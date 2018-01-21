@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "291457d08fe388e4d8e8"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "e3389b4d4c39c943ec70"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -715,7 +715,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.h = function() { return hotCurrentHash; };
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return hotCreateRequire(3)(__webpack_require__.s = 3);
+/******/ 	return hotCreateRequire(4)(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -725,116 +725,7 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 
-const getShape = arr => typeof arr === 'number' ? null : [arr.length].concat(getShape(arr[0])).filter(d => d);
-
-const getSpace = shape => shape.length == 0 ? 1 : shape.reduceRight((ss, d, i, shape) => i == shape.length - 1 ? [1] : [ss[0] * shape[i + 1], ...ss], []);
-
-// shape = [4,3,4];
-// console.log(getSpace(shape));
-
-const getVolume = shape => shape.length == 0 ? [] : shape.reduce((a, b) => a * b);
-
-const clone = refValue => {
-  return refValue instanceof Array ? Object.assign([], refValue) : Object.assign({}, refValue);
-};
-
-const remapIndex = (idx, sh) => {
-  idx = idx > -1 ? idx : sh + idx;
-  if (idx < 0 || idx >= sh) {
-    throw Error('index invalid');
-  } else {
-    return idx;
-  }
-};
-
-const remapSelect = (sval, shape) => {
-  //numpy like selector
-  const vsp = sval.split(',');
-  if (vsp.length > shape.length) {
-    throw Error('selector is not consitent with shape');
-  }
-  const select = shape.map((sh, i) => {
-    const v = i < vsp.length ? vsp[i] : ':';
-    if ('' + +v === 'NaN') {
-      //check if v is a number or not
-      let [l, h, st] = v.split(':');
-      st = st ? +st : 1;
-      l = l ? +l : st > 0 ? 0 : sh - 1;
-      h = h ? +h : st > 0 ? sh : 0;
-      let check = [];
-      check.push(h > sh ? `IndexError: ${h} higher than ${sh}` : null);
-      check.push(st < 0 && h > l ? `IndexError: if st < 0, ${l} higher than ${h}` : null);
-      if (check.filter(d => d).length) {
-        throw Error('' + check);
-      }
-      return [l, h, st];
-    } else {
-      return remapIndex(+v, sh);
-    }
-  });
-  return select;
-};
-
-function* indexGenerator(selector, space, axis, idx) {
-  axis = axis | 0;
-  idx = idx ? idx : selector.map(() => 0);
-  const l = selector[axis][0] | selector[axis],
-        h = selector[axis][1] ? selector[axis][1] : l + 1,
-        s = selector[axis][2] ? selector[axis][2] : 1;
-  idx[axis] = l;
-  while (s > 0 ? idx[axis] < h : false) {
-    if (axis + 1 < selector.length) {
-      yield* indexGenerator(selector, space, axis + 1, idx);
-      idx[axis] += s;
-    } else {
-      yield { idx: idx, vx: idx.reduce((s, d, i) => s + d * space[i], 0) };
-      idx[axis] += s;
-    }
-  }
-}
-
-function* _indexGenerator(_selector, space, axis, idx) {
-  let [l, h, s] = _selector;
-  while (l < h) {
-    idx[axis] = l;
-    yield { idx: idx, vx: idx.reduce((s, d, i) => s + d * space[i], 0) };
-    l += s;
-  }
-}
-
-function* enummerate(generator) {
-  let i = 0;
-  for (let v of generator) {
-    yield [v, i];
-    i += 1;
-  }
-}
-
-const ravel = a => a.reduce((s, a) => {
-  return a instanceof Array ? s.concat(ravel(a)) : s.concat(a);
-}, []);
-
-const ndarray = {
-  'getShape': getShape,
-  'getSpace': getSpace,
-  'getVolume': getVolume,
-  'clone': clone,
-  'remapSelect': remapSelect,
-  'indexGenerator': indexGenerator,
-  '_indexGenerator': _indexGenerator,
-  'enummerate': enummerate,
-  'ravel': ravel
-};
-module.exports = ndarray;
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const nd = __webpack_require__(0);
+const nd = __webpack_require__(1);
 
 const Selector = {
   get: function (d, selectString) {
@@ -946,14 +837,125 @@ number.prototype.tolist = function () {
 };
 
 /***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const getShape = arr => typeof arr === 'number' ? null : [arr.length].concat(getShape(arr[0])).filter(d => d);
+
+const getSpace = shape => shape.length == 0 ? 1 : shape.reduceRight((ss, d, i, shape) => i == shape.length - 1 ? [1] : [ss[0] * shape[i + 1], ...ss], []);
+
+// shape = [4,3,4];
+// console.log(getSpace(shape));
+
+const getVolume = shape => shape.length == 0 ? [] : shape.reduce((a, b) => a * b);
+
+const clone = refValue => {
+  return refValue instanceof Array ? Object.assign([], refValue) : Object.assign({}, refValue);
+};
+
+const remapIndex = (idx, sh) => {
+  idx = idx > -1 ? idx : sh + idx;
+  if (idx < 0 || idx >= sh) {
+    throw Error('index invalid');
+  } else {
+    return idx;
+  }
+};
+
+const remapSelect = (sval, shape) => {
+  //numpy like selector
+  const vsp = sval.split(',');
+  if (vsp.length > shape.length) {
+    throw Error('selector is not consitent with shape');
+  }
+  const select = shape.map((sh, i) => {
+    const v = i < vsp.length ? vsp[i] : ':';
+    if ('' + +v === 'NaN') {
+      //check if v is a number or not
+      let [l, h, st] = v.split(':');
+      st = st ? +st : 1;
+      l = l ? +l : st > 0 ? 0 : sh - 1;
+      h = h ? +h : st > 0 ? sh : 0;
+      let check = [];
+      check.push(h > sh ? `IndexError: ${h} higher than ${sh}` : null);
+      check.push(st < 0 && h > l ? `IndexError: if st < 0, ${l} higher than ${h}` : null);
+      if (check.filter(d => d).length) {
+        throw Error('' + check);
+      }
+      return [l, h, st];
+    } else {
+      return remapIndex(+v, sh);
+    }
+  });
+  return select;
+};
+
+function* indexGenerator(selector, space, axis, idx) {
+  axis = axis | 0;
+  idx = idx ? idx : selector.map(() => 0);
+  console.warn(idx);
+  const l = selector[axis][0] | selector[axis],
+        h = selector[axis][1] ? selector[axis][1] : l + 1,
+        s = selector[axis][2] ? selector[axis][2] : 1;
+  idx[axis] = l;
+  while (s > 0 ? idx[axis] < h : false) {
+    if (axis + 1 < selector.length) {
+      yield* indexGenerator(selector, space, axis + 1, idx);
+      idx[axis] += s;
+    } else {
+      yield { idx: idx, vx: idx.reduce((s, d, i) => s + d * space[i], 0) };
+      idx[axis] += s;
+    }
+  }
+}
+
+function* _indexGenerator(_selector, space, axis, idx) {
+  let [l, h, s] = _selector;
+  while (l < h) {
+    idx[axis] = l;
+    yield { idx: idx, vx: idx.reduce((s, d, i) => s + d * space[i], 0) };
+    l += s;
+  }
+}
+
+function* enummerate(generator) {
+  let i = 0;
+  for (let v of generator) {
+    yield [v, i];
+    i += 1;
+  }
+}
+
+const ravel = a => a.reduce((s, a) => {
+  return a instanceof Array ? s.concat(ravel(a)) : s.concat(a);
+}, []);
+
+const ndarray = {
+  'getShape': getShape,
+  'getSpace': getSpace,
+  'getVolume': getVolume,
+  'clone': clone,
+  'remapSelect': remapSelect,
+  'indexGenerator': indexGenerator,
+  '_indexGenerator': _indexGenerator,
+  'enummerate': enummerate,
+  'ravel': ravel
+};
+module.exports = ndarray;
+
+/***/ }),
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-const nd = __webpack_require__(0);
-const Number = __webpack_require__(1);
+const nd = __webpack_require__(1);
+const GradOps = __webpack_require__(3);
+const Number = __webpack_require__(0);
 
 const Operators = {};
 
@@ -964,54 +966,78 @@ if (typeof window !== 'undefined') {
   window.Operators = Operators;
 }
 
-Operators.dot = function (nbA, nbB) {
-  const sA = nbA.shape,
-        sB = nbB.shape;
-  const pA = nbA.space,
-        pB = nbB.space;
-
-  if (sA.length == 1 && sB.length == 1) {
-    let newShape = [1];
-    let newValue = new Float32Array(1);
-    const nS = sA[0] === sB[0] ? sA[0] : null;
-    if (nS === null) {
-      throw Error('shape not consitent');
-    }
+Operators.dot = (nbA, nbB, stopGrad, prefix) => {
+  stopGrad = stopGrad ? stopGrad : false;
+  const _dot$1d = (sA, sB, nS) => {
+    let newShape = [1],
+        newValue = new Float32Array(1);
     for (let v = 0; v < nS; v++) {
       newValue[0] += nbA.value[v] * nbB.value[v];
     }
     return Number(newValue, newShape);
-  }
-  let newShape = sA.slice(0, -1).concat(sB.slice(-1));
-  let newValue = new Float32Array(nd.getVolume(newShape));
-  const selector = newShape.map(d => [0, d, 1]);
-
-  const Aaxis = sA.length - 1,
-        Baxis = sB.length - 2;
-  const nS = sA[Aaxis] === sB[Baxis] ? sA[Aaxis] : null;
-  if (nS === null) {
-    throw Error('shape not consitent');
-  }
-  for (let px of nd.indexGenerator(selector, nd.getSpace(newShape))) {
-    let idx = px.idx,
-        vx = px.vx;
-    let adx = idx.slice(),
-        bdx = idx.slice();
-    let aV$_ = adx.reduce((s, d, i) => i == Aaxis ? s : s + d * pA[i], 0);
-    let bV$_ = bdx.reduce((s, d, i) => i == Baxis ? s : s + d * pB[i], 0);
-    let aVx = 0,
-        bVx = 0;
-    for (let v = 0; v < nS; v += 1) {
-      aVx = aV$_ + v * pA[Aaxis];
-      bVx = bV$_ + v * pB[Baxis];
-      newValue[vx] += nbA.value[aVx] * nbB.value[bVx];
+  };
+  const _dot$2d = (sA, sB, nS, pA, pB) => {
+    let newShape = [sA[0], sB[1]];
+    let newValue = new Float32Array(nd.getVolume(newShape));
+    const selector = newShape.map(d => [0, d, 1]);
+    for (let px of nd.indexGenerator(selector, nd.getSpace(newShape))) {
+      let aVx = 0,
+          bVx = 0,
+          vx = px.vx,
+          r = px.idx[0],
+          c = px.idx[1];
+      for (let v = 0; v < nS; v += 1) {
+        aVx = r * pA[0] + v;
+        bVx = c + v * pB[0];
+        newValue[vx] += nbA.value[aVx] * nbB.value[bVx];
+      }
     }
+    return Number(newValue, newShape);
+  };
+  const _checkShapeThenRun = (ndA, ndB) => {
+    const sA = nbA.shape,
+          sB = nbB.shape;
+    const pA = nbA.space,
+          pB = nbB.space;
+    if (sA.length == 1 && sB.length == 1) {
+      const nS = sA[0] === sB[0] ? sA[0] : null;
+      if (nS === null) {
+        throw Error('shape not consitent');
+      }
+      return _dot$1d(sA, sB, nS);
+    } else if (sA.length == 2 && sA.length == 2) {
+      const nS = sA[1] === sB[0] ? sA[1] : null;
+      return _dot$2d(sA, sB, nS, pA, pB);
+    } else if (sA.length > 2 && sB.length == 2) {
+      const sA$l = sA.length;
+      const nS = sA[sA$l - 1] === sB[0] ? sA[sA$l - 1] : null;
+      if (nS === null) {
+        throw Error('shape not consitent');
+      }
+      let selector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
+      console.warn('' + selector);
+      for (let px of nd.indexGenerator(selector, sA)) {
+        console.warn('px', px.idx.join(':'));
+      }
+    } else if (sA.length > 2 && sB.length > 2) {
+      throw Error('not implement');
+    } else {
+      throw Error('shape not consitent');
+    }
+  };
+
+  let ret = _checkShapeThenRun(nbA, nbB);
+
+  if (stopGrad === false && GradOps.dot) {
+    console.warn('go there');
+    ret = GradOps.dot(ret, [nbA, nbB]);
   }
-  return Number(newValue, newShape);
+  return ret;
 };
 
-Operators.T = nbA => {
+Operators.T = (nbA, stopGrad) => {
   // validateDotShape(a.shape,b.shape);
+  stopGrad = stopGrad ? stopGrad : false;
   const sA = nbA.shape,
         space = nbA.space;
   let newShape = sA.slice().reverse();
@@ -1026,12 +1052,19 @@ Operators.T = nbA => {
   return Number(newValue, newShape);
 };
 
-Operators.pow = (nd, hat) => {
+Operators.pow = (nd, hat, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   let newValue = nd.value.map(d => Math.pow(d, hat));
-  return Number(newValue, nd.shape);
+  let ret = Number(newValue, nd.shape);
+  if (stopGrad === false && GradOps.pow) {
+    ret = GradOps.pow(ret, nd, hat);
+  }
+  console.warn(ret);
+  return ret;
 };
 
-Operators.exp = nd => {
+Operators.exp = (nd, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   let newValue = nd.value.map(d => Math.exp(d));
   let ret = Number(newValue, nd.shape);
   if (nd.grad) {
@@ -1041,24 +1074,24 @@ Operators.exp = nd => {
   return ret;
 };
 
-Operators.tanh = nd => {
+Operators.tanh = (nd, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   let newValue = nd.value.map(d => Math.tanh(d));
   let ret = Number(newValue, nd.shape);
-  if (nd.grad) {
-    const vjp_op = x => 1 - Math.pow(Math.tanh(x), 2);
-    ret.grad = [{ bw: nd, vid: nd.vid,
-      vjp: Number(nd.value.map(d => vjp_op(d)), nd.shape) }];
+  if (GradOps.tanh) {
+    ret = GradOps.tanh(ret, nd);
   }
   return ret;
 };
 
-Operators.sigmoid = nd => {
+Operators.sigmoid = (nd, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   let newValue = nd.value.map(d => 0.5 * (Math.tanh(d) + 1.0));
 
   return Number(newValue, nd.shape);
 };
 
-Operators.relu = a => {
+Operators.relu = (nd, stopGrad) => {
   throw Error('not implement');
 };
 
@@ -1073,7 +1106,7 @@ const validateOps = (nbA, valB) => {
     let vA = ndA.value;
     return vA.map((d, i) => ops(d, vB));
   };
-  console.warn(typeof nbA, typeof valB);
+  // console.warn(typeof nbA, typeof valB);
   if (Number().isNumber(nbA) && typeof valB === 'number') {
     return numMapping;
   }
@@ -1083,29 +1116,40 @@ const validateOps = (nbA, valB) => {
   throw Error('invalide object type');
 };
 
-Operators.add = (a, b) => {
-
+Operators.add = (a, b, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   const addOp = (d1, d2) => d1 + d2;
   const mapping = validateOps(a, b);
   let newValue = mapping(a, b, addOp);
-  return Number(newValue, a.shape);
+  let ret = Number(newValue, a.shape);
+  if (stopGrad === false && GradOps.add) {
+    ret = GradOps.add(ret, [a, b]);
+  }
+  return ret;
 };
 
-Operators.minus = (a, b) => {
+Operators.minus = (a, b, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   const minusOp = (d1, d2) => d1 - d2;
   const mapping = validateOps(a, b);
   let newValue = mapping(a, b, minusOp);
-  return Number(newValue, a.shape);
+  let ret = Number(newValue, a.shape);
+  if (stopGrad === false && GradOps.minus) {
+    ret = GradOps.minus(ret, [a, b]);
+  }
+  return ret;
 };
 
-Operators.mul = (a, b) => {
+Operators.mul = (a, b, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   const mulOp = (d1, d2) => d1 * d2;
   const mapping = validateOps(a, b);
   let newValue = mapping(a, b, mulOp);
   return Number(newValue, a.shape);
 };
 
-Operators.div = (a, b) => {
+Operators.div = (a, b, stopGrad) => {
+  stopGrad = stopGrad ? stopGrad : false;
   const divOp = (d1, d2) => d1 / d2;
   const mapping = validateOps(a, b);
   let newValue = mapping(a, b, divOp);
@@ -1116,65 +1160,173 @@ Operators.div = (a, b) => {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
+const Number = __webpack_require__(0);
+const GradOps = {};
+if (true) {
+		module.exports = GradOps;
+}
+if (typeof window !== 'undefined') {
+		window.GradOps = GradOps;
+}
+
+GradOps.tanh = (ret, nd) => {
+		if (nd.grad) {
+				const vjp_op = x => 1 - Math.pow(Math.tanh(x), 2);
+				ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
+						vjp: Number(nd.value.map(d => vjp_op(d)), nd.shape) }];
+		}
+		return ret;
+};
+
+GradOps.add = (ret, nds) => {
+		ret.grad = nds.map((nd, i) => {
+				if (nd.grad) {
+						return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+								vjp: Number(nd.value.map(d => 1), nd.shape) };
+				}
+		}).filter(d => d);
+		return ret;
+};
+
+GradOps.minus = (ret, nds) => {
+		ret.grad = nds.map((nd, i) => {
+				if (nd.grad && i == 0) {
+						return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+								vjp: Number(nd.value.map(d => 1), nd.shape) };
+				}
+				if (nd.grad && i == 1) {
+						return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+								vjp: Number(nd.value.map(d => -1), nd.shape) };
+				}
+		}).filter(d => d);
+		return ret;
+};
+
+GradOps.dot = (ret, nds) => {
+		let [nd$0, nd$1] = nds;
+		ret.grad = nds.map((nd, i) => {
+				if (nd.grad) {
+						if (i == 0) {
+								return { bw: nd, vid: nd.grad[0].vid, vjp: nd$1,
+										elementWise: false, order: i };
+						} else {
+								return { bw: nd, vid: nd.grad[0].vid, vjp: nd$0,
+										elementWise: false, order: i };
+						}
+				}
+		}).filter(d => d);
+		return ret;
+};
+
+GradOps.pow = (ret, nd, hat) => {
+		// console.warn('GradOps.pow', hat);
+		// console.warn(nd);
+		if (nd.grad) {
+				const vjp_op = x => hat * x;
+				ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
+						vjp: Number(nd.value.map(d => vjp_op(d)), nd.shape) }];
+		}
+		return ret;
+};
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
 "use strict";
 
 
-const nd = __webpack_require__(0);
+const nd = __webpack_require__(1);
 const Ops = __webpack_require__(2);
-const Number = __webpack_require__(1);
+const Number = __webpack_require__(0);
 
-console.warn(Ops);
+const deepClone = data => data ? JSON.parse(JSON.stringify(data)) : null;
 
 const Autograd = {};
 
 if (true) {
-	module.exports = Autograd;
+  module.exports = Autograd;
 }
 if (typeof window !== 'undefined') {
-	window.Autograd = Autograd;
+  window.Autograd = Autograd;
 }
 
-// for(let func in Ops){
-// 	console.warn(func);
-// }
-const backward = (nd$child, nd$pDiff) => {
-	const grad = nd$child.grad;
-	// console.group(nd$child, nd$pDiff);
-	if (grad == null) {
-		return nd$pDiff;
-	} else {
-		return grad.map(g => {
-			if (g === false) {
-				return null;
-			}
-			if (g.bw === null || g.vjp === null) {
-				return nd$pDiff;
-			} else {
-				let nd$diff = Ops.dot(Ops.T(nd$pDiff), g.vjp);
-				// console.warn('[backward] g');
-				// console.table( g );
-				// console.warn('[backward] nd$diff');
-				// console.table( nd$diff );
-				return backward(g.bw, nd$diff);
-			}
-		}).filter(d => d);
-	}
+const NoGrad = true;
+
+const backward = (nd$child, nd$pDiff, debug) => {
+  const grad = nd$child.grad;
+
+  if (debug) {
+    console.warn('backward', debug);
+    console.table(debug);
+    console.warn(grad);
+    debug.level += 1;
+  }
+  if (grad == null) {
+    return nd$pDiff;
+  } else {
+    let _grad = grad.map(g => {
+      if (g === false) {
+        return null;
+      }
+      if (g.bw === null || g.vjp === null) {
+        nd$pDiff.vid = g.vid;
+        return nd$pDiff;
+      } else {
+        console.warn(Ops.T(g.vjp).shape, nd$pDiff.shape);
+        // let nd$diff = Ops.dot(Ops.T(nd$pDiff),g.vjp, NoGrad);
+        let nd$diff;
+        if (g.elementWise) {
+          nd$diff = Ops.mul(nd$pDiff, g.vjp, NoGrad);
+        } else {
+          if (g.order == 0) {
+            nd$diff = Ops.dot(nd$pDiff, Ops.T(g.vjp), NoGrad);
+          } else {
+            nd$diff = Ops.dot(Ops.T(g.vjp), nd$pDiff, NoGrad);
+          }
+        }
+
+        return backward(g.bw, nd$diff, deepClone(debug));
+      }
+    }).filter(d => d).reduce((ss, d) => {
+      if (d.length) {
+        return [...ss, ...d];
+      } else {
+        return [...ss, d];
+      }
+    }, []);
+    return _grad;
+  }
 };
 
 Autograd.grad = function (func) {
-	const wrapper = (...inputs) => {
-		for (let [nd$0, c] of nd.enummerate(inputs)) {
-			if (Number().isNumber(nd$0) && nd$0.grad !== false) {
-				nd$0.grad = [{ vid: c, bw: null, vjp: null }];
-			}
-		}
-		let nd$ret = func(...inputs);
-		//reset value to 1
-		nd$ret.value = nd$ret.value.map(d => 1);
-		let nd$grad = backward(nd$ret, nd$ret);
-		return [nd$grad, nd$ret];
-	};
-	return wrapper;
+  const wrapper = (...inputs) => {
+    for (let [nd$0, c] of nd.enummerate(inputs)) {
+      if (Number().isNumber(nd$0) && nd$0.grad !== false) {
+        nd$0.grad = [{ vid: c, bw: null, vjp: null }];
+      }
+    }
+    let nd$ret = func(...inputs);
+    //reset value to 1
+    nd$ret.value = nd$ret.value.map(d => 1);
+
+    let debug = { level: 0 };
+    let _nds$grad = backward(nd$ret, nd$ret, debug);
+    let _nds$gradSum = _nds$grad.reduce((ss, g) => {
+      const _vid = g.vid;
+      // console.warn(_vid, ss[_vid]);
+      if (ss[_vid]) {
+        ss[_vid] = Ops.add(ss[_vid], g, NoGrad);
+      } else {
+        ss[_vid] = g;
+      }
+      return ss;
+    }, {});
+    let nds$grad = Object.values(_nds$gradSum);
+    // console.table( nds$grad );
+    return [nds$grad, nd$ret];
+  };
+  return wrapper;
 };
 
 Autograd.backward = backward;

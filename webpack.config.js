@@ -4,7 +4,8 @@ const pkg     = require('./package.json');
 const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 const HtmlWebpackPlugin = require('html-webpack-plugin'); //installed via npm
 const path = require('path');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+// const ReloadPlugin = require('reload-html-webpack-plugin');
+// const CleanWebpackPlugin = require('clean-webpack-plugin');
 const env = require('yargs').argv.env;
 
 let libraryName = 'skynet';
@@ -66,7 +67,7 @@ const config = {
     new HtmlWebpackPlugin({
         filename: 'index.html',
         template: './src/index.html',
-        // inject: false
+        // inject: true
     }),
     new HtmlWebpackPlugin({
         filename: 'autograd.html',
@@ -76,7 +77,7 @@ const config = {
     new HtmlWebpackPlugin({
         filename: 'benchmark.html',
         template: './src/benchmark.html',
-        // inject: false
+        // inject: true
     }),
     new webpack.ProvidePlugin({
         $: "jquery",

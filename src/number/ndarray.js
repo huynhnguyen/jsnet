@@ -26,33 +26,34 @@ const remapIndex = (idx,sh)=>{
 }
 
 const remapSelect = (sval, shape)=>{
-    //numpy like selector
-    const vsp = sval.split(',');
-    if(vsp.length > shape.length){ throw Error('selector is not consitent with shape') }
-    const select = shape.map((sh,i)=>{
-      const v = (i<vsp.length)?vsp[i]:':';
-      if(''+(+v)==='NaN') { 
-      	//check if v is a number or not
-        let [l,h,st] = v.split(':');
-        st = st? +st:1;
-        l  = l ? +l:(st>0)?0:sh-1;
-        h  = h ? +h:(st>0)?sh:0;
-        let check = [];
-        check.push( (h>sh)?`IndexError: ${h} higher than ${sh}`:null );
-        check.push( (st<0&&h>l)?`IndexError: if st < 0, ${l} higher than ${h}`:null );
-        if(check.filter(d=>d).length){  throw Error(''+check);  }
-        return [l,h,st];
-      }
-      else { 
-      	return remapIndex(+v,sh); 
-      } 
-    });
-    return select;
+  //numpy like selector
+  const vsp = sval.split(',');
+  if(vsp.length > shape.length){ throw Error('selector is not consitent with shape') }
+  const select = shape.map((sh,i)=>{
+    const v = (i<vsp.length)?vsp[i]:':';
+    if(''+(+v)==='NaN') { 
+    	//check if v is a number or not
+      let [l,h,st] = v.split(':');
+      st = st? +st:1;
+      l  = l ? +l:(st>0)?0:sh-1;
+      h  = h ? +h:(st>0)?sh:0;
+      let check = [];
+      check.push( (h>sh)?`IndexError: ${h} higher than ${sh}`:null );
+      check.push( (st<0&&h>l)?`IndexError: if st < 0, ${l} higher than ${h}`:null );
+      if(check.filter(d=>d).length){  throw Error(''+check);  }
+      return [l,h,st];
+    }
+    else { 
+      return remapIndex(+v,sh); 
+    } 
+  });
+  return select;
 }
 
 function *indexGenerator(selector, space, axis, idx){
   axis = axis | 0;
   idx = (idx)?idx:selector.map(()=>0);
+  console.warn(idx);
   const l = selector[axis][0]|selector[axis],
         h = selector[axis][1]?selector[axis][1]:l+1,
         s = selector[axis][2]?selector[axis][2]:1;

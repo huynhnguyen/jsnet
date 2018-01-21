@@ -2,25 +2,65 @@
 <html>
 <head>
 	<title>Auto gradient</title>
+	
 </head>
-<body>
-
-<script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/number.js"></script></body>
+<body><script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/number.js"></script></body>
 <script type="text/javascript">
 	(()=>{
-		console.log(Date(), 'script start');
-		let nb = Number([2]);
-		console.table(nb.value);
-		let nb$add2  = Operators.add(nb, 4);
-		console.table(nb$add2.value);
-		function myFunc(nd){
-			let nd2 = Operators.tanh(nd);
-			return Operators.tanh(nd2);
+		console.warn( Date(), 'script start' );
+		function test_grad_chain_2(){
+			let nb = Number([[2,1],[3,4]]);
+			console.table(nb.value);
+			let nb$add2  = Operators.add(nb, 4);
+			console.table(nb$add2.value);
+			function myFunc(nd){
+				let nd2 = Operators.tanh(nd);
+				// return Operators.tanh(nd2);
+				let nd3 = Operators.tanh(nd2);
+				return Operators.tanh(Operators.add(nd3,nd2));
+			}	
 		}
-		let grad = Autograd.grad(myFunc);
-		console.warn('gradient');
-		let [ _grad, _ret ] = grad(nb);
-		console.table( _grad[0] );
+		
+		function test_grad_chain_1(){
+			let nb  = Number([ [2,1,-1],
+						   	   [3,4, 2] ]);
+			let nb2 = Number([ [2,1,1, 2],
+							   [-1,3,4,3],
+							   [4,2,2, 3] ]);
+			nb2.grad = false;
+			function myFunc(nd$1, nd$2){
+				return Operators.tanh(Operators.dot(nd$1,nd$2));
+			}
+			let grad = Autograd.grad(myFunc);
+			console.warn('gradient');
+			let [ _grad, _ret ] = grad(nb,nb2);
+			console.table( _grad );	
+		}
+
+		function test_grad_mean_square_error(){
+			let param  = Number([ 2,  1, -1 ]);
+			let x      = Number([ 2, -1,  4 ]);
+			let y = Number([ 2 ]);
+			x.grad = false;
+			y.grad = false;
+			function myFunc(y, x, param){
+				let y_predict = Operators.dot(param, x);
+				let error = Operators.pow( Operators.minus(y,y_predict), 2 );
+				console.warn( error );
+				return error;
+			}
+			console.warn('myFunc');
+			let grad = Autograd.grad(myFunc);
+			console.warn('gradient');
+			let [ _grad, _ret ] = grad(y, x, param);
+			console.table( _grad );	
+		}
+
+		function test_Grad_log_sum_error(){
+
+		}
+		test_grad_mean_square_error();
+		
 	})();
 </script>
 </html>
