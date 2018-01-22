@@ -67,10 +67,18 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
       if (nS === null) {
         throw Error('shape not consitent');
       }
+      let newShape = [...sA.slice(0, -1), sB[1]];
+      let newValue = new Float32Array(nd.getVolume(newShape));
+      let ret = Number(newValue, newShape);
+      console.log('newShape', newShape);
       let selector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
-      console.warn('' + selector);
+      let leftSelect;
       for (let px of nd.indexGenerator(selector, sA)) {
-        console.warn('px', px.idx.join(':'));
+        leftSelect = px.idx.slice(0, -2).join(',') + ',:,:';
+        console.warn('loop', leftSelect);
+        console.warn(ndA[leftSelect]);
+        let _innerRet = Operators.dot(ndA[leftSelect], ndB);
+        ret[leftSelect] = _innerRet;
       }
     } else if (sA.length > 2 && sB.length > 2) {
       throw Error('not implement');
@@ -81,10 +89,10 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
 
   let ret = _checkShapeThenRun(nbA, nbB);
 
-  if (stopGrad === false && GradOps.dot) {
-    console.warn('go there');
-    ret = GradOps.dot(ret, [nbA, nbB]);
-  }
+  // if(stopGrad===false && GradOps.dot){
+  //   console.warn('go there')
+  //   ret = GradOps.dot(ret, [nbA,nbB]);
+  // }
   return ret;
 };
 

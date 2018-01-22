@@ -53,7 +53,6 @@ const remapSelect = (sval, shape)=>{
 function *indexGenerator(selector, space, axis, idx){
   axis = axis | 0;
   idx = (idx)?idx:selector.map(()=>0);
-  console.warn(idx);
   const l = selector[axis][0]|selector[axis],
         h = selector[axis][1]?selector[axis][1]:l+1,
         s = selector[axis][2]?selector[axis][2]:1;

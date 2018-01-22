@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "e3389b4d4c39c943ec70"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "a60e4b59f5b6c93cfaee"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -896,7 +896,6 @@ const remapSelect = (sval, shape) => {
 function* indexGenerator(selector, space, axis, idx) {
   axis = axis | 0;
   idx = idx ? idx : selector.map(() => 0);
-  console.warn(idx);
   const l = selector[axis][0] | selector[axis],
         h = selector[axis][1] ? selector[axis][1] : l + 1,
         s = selector[axis][2] ? selector[axis][2] : 1;
