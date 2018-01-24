@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "a60e4b59f5b6c93cfaee"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "39ad04cc9165db419848"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -733,12 +733,14 @@ const Selector = {
         shape = d.sh,
         space = d.sp;
     let selector = nd.remapSelect(selectString, shape);
-    let shapeNew = selector.map(d => d[2] ? 0 | (d[1] - d[0]) / d[2] : 1);
+    let shapeNew = selector.map(d => d[2] ? 0 | (d[1] - d[0]) / d[2] : null).filter(d => d);
+
     let valueNew = new Float32Array(nd.getVolume(shapeNew));
-    console.log(selectString, selector, shapeNew);
+    // console.warn('get',selectString, selector, shapeNew)
     for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, nd.getSpace(shape)))) {
       const idx = px.idx,
             vx = px.vx;
+      // console.warn(idx, vx);
       valueNew[c] = value[vx];
     }
     return new number(valueNew, shapeNew);
@@ -1021,11 +1023,13 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
       let leftSelect;
       for (let px of nd.indexGenerator(selector, sA)) {
         leftSelect = px.idx.slice(0, -2).join(',') + ',:,:';
-        console.warn('loop', leftSelect);
-        console.warn(ndA[leftSelect]);
-        let _innerRet = Operators.dot(ndA[leftSelect], ndB);
-        ret[leftSelect] = _innerRet;
+        // console.warn('loop', leftSelect);
+        // console.warn(ndA.v[leftSelect]);
+        let _innerRet = Operators.dot(ndA.v[leftSelect], ndB);
+        // console.warn(_innerRet);
+        ret.v[leftSelect] = _innerRet;
       }
+      return ret;
     } else if (sA.length > 2 && sB.length > 2) {
       throw Error('not implement');
     } else {

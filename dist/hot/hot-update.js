@@ -75,11 +75,13 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
       let leftSelect;
       for (let px of nd.indexGenerator(selector, sA)) {
         leftSelect = px.idx.slice(0, -2).join(',') + ',:,:';
-        console.warn('loop', leftSelect);
-        console.warn(ndA[leftSelect]);
-        let _innerRet = Operators.dot(ndA[leftSelect], ndB);
-        ret[leftSelect] = _innerRet;
+        // console.warn('loop', leftSelect);
+        // console.warn(ndA.v[leftSelect]);
+        let _innerRet = Operators.dot(ndA.v[leftSelect], ndB);
+        // console.warn(_innerRet);
+        ret.v[leftSelect] = _innerRet;
       }
+      return ret;
     } else if (sA.length > 2 && sB.length > 2) {
       throw Error('not implement');
     } else {

@@ -5,12 +5,15 @@ const Selector = {
   get:function(d, selectString){
     let value = d.v, shape = d.sh, space = d.sp; 
     let selector = nd.remapSelect(selectString, shape);
-    let shapeNew = selector.map( (d)=>(d[2])?0|((d[1]-d[0])/d[2]):1 );
+    let shapeNew = selector.map( (d)=>(d[2])?0|((d[1]-d[0])/d[2]):null )
+                    .filter(d=>d);
+    
     let valueNew = new Float32Array(nd.getVolume(shapeNew));
-    console.log(selectString, selector, shapeNew)
+    // console.warn('get',selectString, selector, shapeNew)
     for(let [px,c] of nd.enummerate( nd.indexGenerator(selector, 
                                         nd.getSpace(shape) ) ) ){
       const idx = px.idx, vx = px.vx;
+      // console.warn(idx, vx);
       valueNew[c] = value[vx]; 
     }
     return new number(valueNew, shapeNew);
