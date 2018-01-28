@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "39ad04cc9165db419848"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "af46c6c32bcc4b700633"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -1031,7 +1031,31 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
       }
       return ret;
     } else if (sA.length > 2 && sB.length > 2) {
-      throw Error('not implement');
+      const sA$l = sA.length,
+            sB$l = sB.length;
+      const nS = sA[sA$l - 1] === sB[sB$l - 2] ? sA[sA$l - 1] : null;
+      if (nS === null) {
+        throw Error('shape not consitent');
+      }
+      let newShape = [...sA.slice(0, -1), ...sB.slice(0, -2), ...sB.slice(-1)];
+      let newValue = new Float32Array(nd.getVolume(newShape));
+      let ret = Number(newValue, newShape);
+      console.log('newShape', newShape);
+      let leftSelector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
+      let rightSelector = sB.map((d, i) => i < sB$l - 2 ? [0, d, 1] : d);
+      let leftSelect, rightSelect, select;
+      for (let lpx of nd.indexGenerator(leftSelector, sA)) {
+        leftSelect = lpx.idx.slice(0, -2).join(',');
+        for (let rpx of nd.indexGenerator(rightSelector, sB)) {
+          rightSelect = rpx.idx.slice(0, -2).join(',');
+          select = leftSelect + ',:,' + rightSelect + ',:';
+          // console.warn('loop', leftSelect, rightSelect, select);  
+          let _innerRet = Operators.dot(ndA.v[leftSelect], ndB.v[rightSelect]);
+          // console.warn(_innerRet);
+          ret.v[select] = _innerRet;
+        }
+      }
+      return ret;
     } else {
       throw Error('shape not consitent');
     }
@@ -1039,10 +1063,10 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
 
   let ret = _checkShapeThenRun(nbA, nbB);
 
-  // if(stopGrad===false && GradOps.dot){
-  //   console.warn('go there')
-  //   ret = GradOps.dot(ret, [nbA,nbB]);
-  // }
+  if (stopGrad === false && GradOps.dot) {
+    // console.warn('go there')
+    ret = GradOps.dot(ret, [nbA, nbB]);
+  }
   return ret;
 };
 
