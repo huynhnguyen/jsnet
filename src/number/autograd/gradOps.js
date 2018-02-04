@@ -45,6 +45,12 @@ GradOps.minus = (ret, nds)=>{
 
 GradOps.dot = (ret, nds)=>{
 	let [nd$0, nd$1] = nds; 
+  const nd0_grad = ()=>{
+
+  }
+  const nd1_grad = ()=>{
+
+  }
   ret.grad = nds.map((nd,i)=>{
 			if(nd.grad){
 				if(i == 0){
@@ -68,6 +74,18 @@ GradOps.pow = (ret, nd, hat)=>{
       const vjp_op = (x)=>hat*x;
       ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
                     vjp: Number(nd.value.map(d=>vjp_op(d)), nd.shape)} ]
+  }
+  return ret;
+}
+
+GradOps.mean = (ret, nb)=>{
+  if(nb.grad){
+      ret.grad = [{ bw: nb, vid: nb.grad[0].vid, 
+                    vjp: (tracedGrad, nb)=>{
+                      const _length = nb.value.length;
+                      const vjp_op = (x)=> 1.0/_length;
+                      return Number(nb.value.map(d=>vjp_op(d)), nb.shape)
+                    } }];
   }
   return ret;
 }

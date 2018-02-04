@@ -3,6 +3,7 @@ const webpack = require('webpack');
 const pkg     = require('./package.json');
 const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 const HtmlWebpackPlugin = require('html-webpack-plugin'); //installed via npm
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 // const ReloadPlugin = require('reload-html-webpack-plugin');
 // const CleanWebpackPlugin = require('clean-webpack-plugin');
@@ -79,10 +80,12 @@ const config = {
         template: './src/benchmark.html',
         // inject: true
     }),
-    new webpack.ProvidePlugin({
-        $: "jquery",
-        jQuery: "jquery"
+    new HtmlWebpackPlugin({
+        filename: 'unittest.html',
+        template: './src/unittest.html',
+        // inject: true
     }),
+    new CopyWebpackPlugin([{from: 'test/', to:'test/' }]),
     new webpack.HotModuleReplacementPlugin()
   ]
 };

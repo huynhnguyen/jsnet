@@ -27,8 +27,9 @@ const remapIndex = (idx,sh)=>{
 
 const remapSelect = (sval, shape)=>{
   //numpy like selector
-  const vsp = sval.split(',');
-  if(vsp.length > shape.length){ throw Error('selector is not consitent with shape') }
+  const vsp = typeof sval === 'string'?sval.split(','):
+    shape.map(d=>':');
+  if(vsp.length > shape.length){ throw Error('selector is not consitent with shape ') }
   const select = shape.map((sh,i)=>{
     const v = (i<vsp.length)?vsp[i]:':';
     if(''+(+v)==='NaN') { 

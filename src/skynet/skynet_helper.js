@@ -1,13 +1,5 @@
 var _ = require('underscore');
 const Helper = () => {
-	/**
-	* print the log to console with option type
-	* 
-	*
-	* @param {String} msg message to print
-	* @param {String} msgType message type refer to ```const Type```
-	* @see Helper#Logger
-	*/
 	const Logger = (msg, msgType)=>{
 		msgType = msgType | 'info';
 		const Display = {

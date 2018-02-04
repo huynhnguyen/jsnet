@@ -7,7 +7,7 @@ const Selector = {
     let selector = nd.remapSelect(selectString, shape);
     let shapeNew = selector.map( (d)=>(d[2])?0|((d[1]-d[0])/d[2]):null )
                     .filter(d=>d);
-    
+    shapeNew = shapeNew.length == 0?[1]:shapeNew;
     let valueNew = new Float32Array(nd.getVolume(shapeNew));
     // console.warn('get',selectString, selector, shapeNew)
     for(let [px,c] of nd.enummerate( nd.indexGenerator(selector, 

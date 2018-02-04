@@ -2,7 +2,6 @@
 <html>
 <head>
 	<title>start jsnet</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.3/math.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 	<!-- <script src="http://acko.net/files/mathbox2/mathbox-bundle.min.js"></script> -->
 </head>
@@ -22,11 +21,15 @@
 						  [ 9, 10, 11, 12] ]);
 		
 		console.warn('original matrix');
-		console.table(nb.tolist());
+		console.table( nb.tolist() );
 
-		console.warn('get index [:,2]');
-		var nb2 = nb.v[':,2'];	
-		console.table(nb2.tolist());
+		console.warn('get index [:,0]');
+		var nb2 = nb.v[':,0'];	
+		console.table( nb2.tolist() );
+		
+		console.warn('get index [0,0]');
+		var nb2 = nb.v['0,0'];
+		console.warn( nb2 );
 
 		console.warn('set index [:,2] to 0');
 		nb.v[':,2'] = 0;	

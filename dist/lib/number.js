@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "af46c6c32bcc4b700633"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "b3035a96deb1f9b1f157"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -734,7 +734,7 @@ const Selector = {
         space = d.sp;
     let selector = nd.remapSelect(selectString, shape);
     let shapeNew = selector.map(d => d[2] ? 0 | (d[1] - d[0]) / d[2] : null).filter(d => d);
-
+    shapeNew = shapeNew.length == 0 ? [1] : shapeNew;
     let valueNew = new Float32Array(nd.getVolume(shapeNew));
     // console.warn('get',selectString, selector, shapeNew)
     for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, nd.getSpace(shape)))) {
@@ -869,9 +869,9 @@ const remapIndex = (idx, sh) => {
 
 const remapSelect = (sval, shape) => {
   //numpy like selector
-  const vsp = sval.split(',');
+  const vsp = typeof sval === 'string' ? sval.split(',') : shape.map(d => ':');
   if (vsp.length > shape.length) {
-    throw Error('selector is not consitent with shape');
+    throw Error('selector is not consitent with shape ');
   }
   const select = shape.map((sh, i) => {
     const v = i < vsp.length ? vsp[i] : ':';

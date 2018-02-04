@@ -14,56 +14,64 @@ if (typeof window !== 'undefined') {
   window.Autograd = Autograd;
 }
 
+const topoSort = ()=>{
+
+}
+
 const NoGrad = true;
 
-const backward = (nd$child, nd$pDiff, debug)=>{
-  const grad = nd$child.grad;
-  
+const chainDebug = (outputGrad, inputGrads, debug)=>{
   if(debug){
-    console.warn('backward', debug);  
-    console.table(debug);
-    console.warn(grad);
-    debug.level += 1;
+      let indent = '\t';
+      for(let i = 0; i< debug; i++){
+        indent += '\t';
+      }
+      debug.level += 1;
+      console.warn( indent, '[level]', debug.level );  
+      console.warn( indent, '[output]', outputGrad.value );
+      if(inputGrads){
+        for(let g of inputGrads){
+          if(g.bw){
+            console.warn( indent,'[inputs]', g.vid, g.bw.value );   
+          } 
+        }
+      }
+      else{
+        console.warn(indent, '[end of chain]');
+      }
   }
-  if(grad == null){
-    return nd$pDiff;
-  } 
-  else{
-    let _grad = grad.map( g => {
-          if(g===false) { return null }
-          if(g.bw===null || g.vjp===null) {
-            nd$pDiff.vid = g.vid;
-            return nd$pDiff;
-          } else {
-            console.warn( Ops.T(g.vjp).shape, nd$pDiff.shape );
-            // let nd$diff = Ops.dot(Ops.T(nd$pDiff),g.vjp, NoGrad);
-            let nd$diff;
-            if(g.elementWise){
-              nd$diff = Ops.mul( nd$pDiff, g.vjp, NoGrad );
-            }
-            else{
-              if(g.order == 0){
-                nd$diff = Ops.dot( nd$pDiff, Ops.T(g.vjp), NoGrad );  
-              }
-              else{
-                nd$diff = Ops.dot( Ops.T(g.vjp), nd$pDiff, NoGrad );    
-              }
-            }
-            
-            return backward( g.bw, nd$diff, deepClone(debug) ); 
-          }
-        })
-        .filter( d=>d )
-        .reduce( (ss,d)=>{
-          if(d.length){
-            return [...ss,...d];  
-          }
-          else{
-            return [...ss,d];  
-          }
-        }, [] );
-    return _grad;
+}
+const backward = (outputGrad, inputGrads, debug)=>{
+  chainDebug(outputGrad, inputGrads, debug);
+  const filterAndFlatten = (g)=>{
+    return g.filter( d=>d )
+      .reduce( (ss,d)=>{ return [...ss,...(d.length?d:[d])]; }, [] );
   }
+  const runVJP = (outputGrad, nb, vjp)=>{
+    // console.warn(vjp);
+    return vjp?vjp(outputGrad, nb):outputGrad;
+  }
+  const runBackWard = (outputGrad, inputGrads)=>{
+    if(inputGrads){
+      let preGrads = inputGrads.map( g => {
+                let bw = g.bw, vjp = g.vjp, vid = g.vid;
+                let bwGrad = runVJP(outputGrad, bw, vjp);
+                bwGrad.vid = vid;
+                if(bw){///recursive  
+                  return backward( bwGrad, bw.grad, deepClone(debug) ); 
+                }
+                else{ return bwGrad; }
+              } );
+      let postGrads = filterAndFlatten(preGrads);
+      return postGrads;
+    } 
+    else{
+      return outputGrad;
+    }
+  }
+  let ret = runBackWard(outputGrad, inputGrads);
+  // console.warn( ret );
+  return ret;
 }
 
 Autograd.grad = function(func){
@@ -73,26 +81,19 @@ Autograd.grad = function(func){
         nd$0.grad = [{ vid: c, bw: null, vjp:null}];
       }
     }
-    let nd$ret   = func(...inputs);
-    //reset value to 1
-    nd$ret.value = nd$ret.value.map(d=>1);
-    
-    let debug    = {level:0}
-    let _nds$grad     = backward( nd$ret, nd$ret , debug);
+    let nd$out   = func(...inputs);
+    nd$out.value = nd$out.value.map(d=>1);//reset value to 1
+    let debug = { level:0 };
+    let _nds$grad = backward( nd$out, nd$out.grad, debug);
     let _nds$gradSum  = _nds$grad.reduce((ss,g)=>{
         const _vid = g.vid;
-        // console.warn(_vid, ss[_vid]);
-        if(ss[_vid]){  
-          ss[_vid] = Ops.add(ss[_vid], g, NoGrad);  
-        } 
-        else {  
-          ss[_vid] = g;  
-        }
+        ss[_vid] = ss[_vid]?Ops.add(ss[_vid], g, NoGrad):g;  
         return ss;
       },{})
+    console.warn( _nds$gradSum );
     let nds$grad = Object.values( _nds$gradSum );
-    // console.table( nds$grad );
-    return [nds$grad, nd$ret];
+    console.warn( nds$grad );
+    return nds$grad;
   }
   return wrapper;
 }
