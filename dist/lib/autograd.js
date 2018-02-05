@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "b3035a96deb1f9b1f157"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "d831ce12f7eca206708b"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -955,20 +955,11 @@ module.exports = ndarray;
 
 
 const nd = __webpack_require__(1);
-const GradOps = __webpack_require__(3);
 const Number = __webpack_require__(0);
 
 const Operators = {};
 
-if (true) {
-  module.exports = Operators;
-}
-if (typeof window !== 'undefined') {
-  window.Operators = Operators;
-}
-
-Operators.dot = (nbA, nbB, stopGrad, prefix) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.dot = (nbA, nbB) => {
   const _dot$1d = (sA, sB, nS) => {
     let newShape = [1],
         newValue = new Float32Array(1);
@@ -1062,17 +1053,11 @@ Operators.dot = (nbA, nbB, stopGrad, prefix) => {
   };
 
   let ret = _checkShapeThenRun(nbA, nbB);
-
-  if (stopGrad === false && GradOps.dot) {
-    // console.warn('go there')
-    ret = GradOps.dot(ret, [nbA, nbB]);
-  }
   return ret;
 };
 
-Operators.T = (nbA, stopGrad) => {
+Operators.T = nbA => {
   // validateDotShape(a.shape,b.shape);
-  stopGrad = stopGrad ? stopGrad : false;
   const sA = nbA.shape,
         space = nbA.space;
   let newShape = sA.slice().reverse();
@@ -1087,45 +1072,30 @@ Operators.T = (nbA, stopGrad) => {
   return Number(newValue, newShape);
 };
 
-Operators.pow = (nd, hat, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.pow = (nd, hat) => {
   let newValue = nd.value.map(d => Math.pow(d, hat));
   let ret = Number(newValue, nd.shape);
-  if (stopGrad === false && GradOps.pow) {
-    ret = GradOps.pow(ret, nd, hat);
-  }
-  console.warn(ret);
   return ret;
 };
 
-Operators.exp = (nd, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.exp = nd => {
   let newValue = nd.value.map(d => Math.exp(d));
   let ret = Number(newValue, nd.shape);
-  if (nd.grad) {
-    ret.grad = [{ father: nd.grad,
-      vjp_op: x => Math.exp(x) }];
-  }
   return ret;
 };
 
-Operators.tanh = (nd, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.tanh = nd => {
   let newValue = nd.value.map(d => Math.tanh(d));
   let ret = Number(newValue, nd.shape);
-  if (GradOps.tanh) {
-    ret = GradOps.tanh(ret, nd);
-  }
   return ret;
 };
 
-Operators.sigmoid = (nd, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
-  let newValue = nd.value.map(d => 0.5 * (Math.tanh(d) + 1.0));
+Operators.sigmoid = nd => {
+  throw Error('not implement');
   return Number(newValue, nd.shape);
 };
 
-Operators.relu = (nd, stopGrad) => {
+Operators.relu = nd => {
   throw Error('not implement');
 };
 
@@ -1165,77 +1135,69 @@ const validateOps = (nbA, valB) => {
   throw Error('invalide object type');
 };
 
-Operators.add = (a, b, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.add = (a, b) => {
   const addOp = (d1, d2) => d1 + d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, addOp);
   let ret = Number(newValue, newShape);
-  if (stopGrad === false && GradOps.add) {
-    ret = GradOps.add(ret, [a, b]);
-  }
   return ret;
 };
 
-Operators.minus = (a, b, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.minus = (a, b) => {
   const minusOp = (d1, d2) => d1 - d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, minusOp);
   let ret = Number(newValue, newShape);
-  if (stopGrad === false && GradOps.minus) {
-    ret = GradOps.minus(ret, [a, b]);
-  }
   return ret;
 };
 
-Operators.mul = (a, b, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.mul = (a, b) => {
   const mulOp = (d1, d2) => d1 * d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, mulOp);
   return Number(newValue, newShape);
 };
 
-Operators.div = (a, b, stopGrad) => {
-  stopGrad = stopGrad ? stopGrad : false;
+Operators.div = (a, b) => {
   const divOp = (d1, d2) => d1 / d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, divOp);
   return Number(newValue, newShape);
 };
 
-Operators.mean = (a, axis, stopGrad) => {
+Operators.mean = (nb$0, axis) => {
   //TODO: implement for axis selector
-  stopGrad = stopGrad ? stopGrad : false;
   axis = axis ? axis : -1;
   let ret;
   if (axis === -1) {
-    const ll = a.value.length;
+    const ll = nb$0.value.length;
     let newShape = [1];
     let newValue = new Float32Array(nd.getVolume(newShape));
-    newValue[0] = a.value.reduce((s, v) => s += v, 0) / ll;
+    newValue[0] = nb$0.value.reduce((s, v) => s += v, 0) / ll;
     ret = Number(newValue, newShape);
   } else {
-    let selector = a.shape.map((d, i) => i !== axis ? 0 : [0, d, 1]);
-    // for(let px of nd.indexGenerator(, nd.getSpace(a.shape)) ){
-    //   console.warn(px);
-    // }
-  }
-  if (stopGrad === false && GradOps.mean) {
-    ret = GradOps.mean(ret, a);
+    let selector = nb$0.shape.map((d, i) => i !== axis ? 0 : [0, d, 1]);
   }
   return ret;
 };
 
-// Operators.argmax()
+if (true) {
+  module.exports = Operators;
+}
+if (typeof window !== 'undefined') {
+  window.Operators = Operators;
+}
 
 /***/ }),
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 const Number = __webpack_require__(0);
+const nd = __webpack_require__(1);
+const Operators = __webpack_require__(2);
+const Op = Operators;
 const GradOps = {};
+
 if (true) {
   module.exports = GradOps;
 }
@@ -1276,39 +1238,62 @@ GradOps.minus = (ret, nds) => {
   return ret;
 };
 
-GradOps.dot = (ret, nds) => {
-  let [nd$0, nd$1] = nds;
-  const nd0_grad = () => {};
-  const nd1_grad = () => {};
-  ret.grad = nds.map((nd, i) => {
-    if (nd.grad) {
+GradOps.dot = (ret, nbs) => {
+  const nd0_grad = (ret, nd$0) => {
+    let sR = ret.shape,
+        s$0 = nd$0.shape;
+    let pR = ret.space,
+        p$0 = nd$0.space;
+    if (s$0.length == 1) {} else if (s$0.length == 2) {} else if (s$0.length > 2) {}
+  };
+  const nd1_grad = (ret, nd$1) => {
+    let sR = ret.shape,
+        s$0 = nd$1.shape;
+    let pR = ret.space,
+        p$0 = nd$1.space;
+    if (s$1.length == 1) {} else if (s$1.length == 2) {} else if (s$1.length > 2) {}
+  };
+  const transformRet = (ret, nb$0, nb$1) => {
+    let rS = ret.shape,
+        nb$0Shape = nb$0.shape,
+        nb$1Shape = nb$1.shape;
+    let leftSelector, rightSelector;
+    if (nb$0Shape.length > 2) {
+      leftSelector = nb$0.shape.slice(0, -2);
+    }
+    if (nb$1Shape.length > 2) {
+      rightSelector = nb$0.shape.slice(0, -2);
+    }
+    selector = leftSelector + ret.shape.slice(-2) + rightSelector + ret.shape.slice(-1);
+    for (let px of nb.inbexGenerator(selector, nb.getSpace())) return ret;
+  };
+  ret.transformRet = transformRet;
+  ret.grad = nbs.map((nb, i) => {
+    if (nb.grad) {
       if (i == 0) {
-        return { bw: nd, vid: nd.grad[0].vid, vjp: nd$1,
-          elementWise: false, order: i };
+        return [{ bw: nb, vid: nb.grad[0].vid, vjp: nb0_grad }];
       } else {
-        return { bw: nd, vid: nd.grad[0].vid, vjp: nd$0,
-          elementWise: false, order: i };
+        return [{ bw: nb, vid: nb.grad[0].vid, vjp: nb1_grad }];
       }
     }
   }).filter(d => d);
   return ret;
 };
 
-GradOps.pow = (ret, nd, hat) => {
-  // console.warn('GradOps.pow', hat);
-  // console.warn(nd);
-  if (nd.grad) {
-    const vjp_op = x => hat * x;
-    ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
-      vjp: Number(nd.value.map(d => vjp_op(d)), nd.shape) }];
+GradOps.pow = (ret, nb, hat) => {
+  if (nb.grad) {
+    const pow_grad = (bwGrad, nb) => {
+      return Op.mul(bwGrad, Op.mul(nb, hat));
+    };
+    ret.grad = [{ bw: nb, vid: nb.grad[0].vid, vjp: pow_grad }];
   }
   return ret;
 };
 
-GradOps.mean = (ret, nb) => {
+GradOps.mean = (ret, nb, axis) => {
   if (nb.grad) {
     ret.grad = [{ bw: nb, vid: nb.grad[0].vid,
-      vjp: (tracedGrad, nb) => {
+      vjp: (bwGrad, nb) => {
         const _length = nb.value.length;
         const vjp_op = x => 1.0 / _length;
         return Number(nb.value.map(d => vjp_op(d)), nb.shape);
@@ -1327,6 +1312,7 @@ GradOps.mean = (ret, nb) => {
 const nd = __webpack_require__(1);
 const Ops = __webpack_require__(2);
 const Number = __webpack_require__(0);
+const GradOps = __webpack_require__(3);
 
 const deepClone = data => data ? JSON.parse(JSON.stringify(data)) : null;
 
@@ -1338,10 +1324,6 @@ if (true) {
 if (typeof window !== 'undefined') {
   window.Autograd = Autograd;
 }
-
-const topoSort = () => {};
-
-const NoGrad = true;
 
 const chainDebug = (outputGrad, inputGrads, debug) => {
   if (debug) {
@@ -1374,13 +1356,18 @@ const backward = (outputGrad, inputGrads, debug) => {
     // console.warn(vjp);
     return vjp ? vjp(outputGrad, nb) : outputGrad;
   };
+  const runTransformBW = (outputGrad, inputGrads, transform) => {
+    console.warn('transform', outputGrad.transformRet);
+    return transform ? transform(outputGrad, inputGrads) : outputGrad;
+  };
   const runBackWard = (outputGrad, inputGrads) => {
     if (inputGrads) {
-      let preGrads = inputGrads.map(g => {
+      let bwNb = runTransformBW(outputGrad, inputGrads, outputGrad.transformRet);
+      let preGrads = inputGrads.map((g, idx) => {
         let bw = g.bw,
             vjp = g.vjp,
             vid = g.vid;
-        let bwGrad = runVJP(outputGrad, bw, vjp);
+        let bwGrad = runVJP(bwNb, bw, vjp);
         bwGrad.vid = vid;
         if (bw) {
           ///recursive  
@@ -1400,6 +1387,30 @@ const backward = (outputGrad, inputGrads, debug) => {
   return ret;
 };
 
+Autograd.Operators = {};
+for (let opName in Ops) {
+  const _OpFunc = Ops[opName];
+  const appendGradOp = (...inputs) => {
+    let stopGrad = false;
+    const [last] = inputs.slice(-1);
+    if (typeof last === 'boolean') {
+      stopGrad = last; //either true or false
+      inputs = inputs.slice(0, -1);
+    }
+    let ret = _OpFunc(...inputs);
+    if (stopGrad === true) {
+      return ret;
+    } else {
+      if (GradOps[opName] === undefined) {
+        throw Error(`gradOp[${opName}] Not implement`);
+      }
+      ret = GradOps[opName](ret, ...inputs);
+      return ret;
+    }
+  };
+  Autograd.Operators[opName] = appendGradOp;
+}
+
 Autograd.grad = function (func) {
   const wrapper = (...inputs) => {
     for (let [nd$0, c] of nd.enummerate(inputs)) {
@@ -1416,9 +1427,9 @@ Autograd.grad = function (func) {
       ss[_vid] = ss[_vid] ? Ops.add(ss[_vid], g, NoGrad) : g;
       return ss;
     }, {});
-    console.warn(_nds$gradSum);
+    // console.warn( _nds$gradSum );
     let nds$grad = Object.values(_nds$gradSum);
-    console.warn(nds$grad);
+    // console.warn( nds$grad );
     return nds$grad;
   };
   return wrapper;

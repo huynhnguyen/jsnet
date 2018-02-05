@@ -2,6 +2,8 @@
 const nd = require('../ndarray');
 const Ops  = require('../operators');
 const Number = require('../number');
+const GradOps = require('./gradOps');
+
 
 const deepClone = (data)=> data?JSON.parse(JSON.stringify(data)):null;
 
@@ -14,31 +16,25 @@ if (typeof window !== 'undefined') {
   window.Autograd = Autograd;
 }
 
-const topoSort = ()=>{
-
-}
-
-const NoGrad = true;
-
 const chainDebug = (outputGrad, inputGrads, debug)=>{
   if(debug){
-      let indent = '\t';
-      for(let i = 0; i< debug; i++){
-        indent += '\t';
+    let indent = '\t';
+    for(let i = 0; i< debug; i++){
+      indent += '\t';
+    }
+    debug.level += 1;
+    console.warn( indent, '[level]', debug.level );  
+    console.warn( indent, '[output]', outputGrad.value );
+    if(inputGrads){
+      for(let g of inputGrads){
+        if(g.bw){
+          console.warn( indent,'[inputs]', g.vid, g.bw.value );   
+        } 
       }
-      debug.level += 1;
-      console.warn( indent, '[level]', debug.level );  
-      console.warn( indent, '[output]', outputGrad.value );
-      if(inputGrads){
-        for(let g of inputGrads){
-          if(g.bw){
-            console.warn( indent,'[inputs]', g.vid, g.bw.value );   
-          } 
-        }
-      }
-      else{
-        console.warn(indent, '[end of chain]');
-      }
+    }
+    else{
+      console.warn(indent, '[end of chain]');
+    }
   }
 }
 const backward = (outputGrad, inputGrads, debug)=>{
@@ -51,11 +47,16 @@ const backward = (outputGrad, inputGrads, debug)=>{
     // console.warn(vjp);
     return vjp?vjp(outputGrad, nb):outputGrad;
   }
+  const runTransformBW = (outputGrad, inputGrads, transform)=>{
+    console.warn('transform', outputGrad.transformRet)
+    return transform?transform(outputGrad, inputGrads): outputGrad;
+  }
   const runBackWard = (outputGrad, inputGrads)=>{
     if(inputGrads){
-      let preGrads = inputGrads.map( g => {
+      let bwNb = runTransformBW(outputGrad, inputGrads, outputGrad.transformRet); 
+      let preGrads = inputGrads.map( (g, idx) => {
                 let bw = g.bw, vjp = g.vjp, vid = g.vid;
-                let bwGrad = runVJP(outputGrad, bw, vjp);
+                let bwGrad = runVJP(bwNb, bw, vjp);
                 bwGrad.vid = vid;
                 if(bw){///recursive  
                   return backward( bwGrad, bw.grad, deepClone(debug) ); 
@@ -74,6 +75,31 @@ const backward = (outputGrad, inputGrads, debug)=>{
   return ret;
 }
 
+Autograd.Operators = {};
+for(let opName in Ops){
+  const _OpFunc = Ops[opName];
+  const appendGradOp = (...inputs)=>{
+    let stopGrad = false;
+    const [ last ] = inputs.slice(-1);
+    if(typeof last === 'boolean'){
+      stopGrad = last;//either true or false
+      inputs = inputs.slice(0,-1);
+    }
+    let ret = _OpFunc(...inputs);
+    if(stopGrad === true){
+      return ret;
+    }
+    else{
+      if(GradOps[opName] === undefined){
+        throw Error(`gradOp[${opName}] Not implement`);
+      }
+      ret = GradOps[opName](ret, ...inputs);
+      return ret;
+    }
+  }
+  Autograd.Operators[opName] = appendGradOp
+}
+
 Autograd.grad = function(func){
   const wrapper = (...inputs)=>{
     for( let [nd$0, c] of nd.enummerate(inputs) ) {
@@ -90,9 +116,9 @@ Autograd.grad = function(func){
         ss[_vid] = ss[_vid]?Ops.add(ss[_vid], g, NoGrad):g;  
         return ss;
       },{})
-    console.warn( _nds$gradSum );
+    // console.warn( _nds$gradSum );
     let nds$grad = Object.values( _nds$gradSum );
-    console.warn( nds$grad );
+    // console.warn( nds$grad );
     return nds$grad;
   }
   return wrapper;

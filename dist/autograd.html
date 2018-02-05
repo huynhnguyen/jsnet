@@ -7,6 +7,7 @@
 <body><script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/number.js"></script></body>
 <script type="text/javascript">
 	(()=>{
+		const Op = Autograd.Operators;
 		console.warn( Date(), 'script start' );
 
 		const gradOpt$1 = (func, ndA)=>{

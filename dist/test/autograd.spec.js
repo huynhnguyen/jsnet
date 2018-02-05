@@ -1,7 +1,7 @@
 const chai = require('chai');
 const Number = require('../src/number/number');
-const Op = require('../src/number/operators');
 const Autograd = require('../src/number/autograd/autograd');
+const Op = Autograd.Operators;
 describe('autograd', function() {
   let nd$A = Number([[0,1],[1,2]]);
   let nd$B = Number([[1,2],[3,4]]);
@@ -13,6 +13,10 @@ describe('autograd', function() {
     let grad = Autograd.grad( func );
     return grad(ndA);
   }
+  const gradOpt$1wC = (func, ndA, constant)=>{
+    let grad = Autograd.grad( func );
+    return grad(ndA, constant);
+  }
   describe('dimension change', function(){    
     it(' grad mean(A) = 1/4*A', function(){
       let nds$grad = gradOpt$1( Op.mean, nd$A );
@@ -20,28 +24,29 @@ describe('autograd', function() {
         .to.equal('0.25,0.25,0.25,0.25');
     });
 
-    // it(' grad dot(A, B) = ', function(){
-    //   let nd$grad = gradOpt$1( Op.mean, nd$A, nd$B );
-    //   chai.expect(''+nd$grad[0].tolist())
-    //     .to.equal('0.25,0.25,0.25,0.25');
-    // });
-
+    it(' grad dot(A, B) = ', function(){
+      let nd$grad = gradOpt$1( Op.mean, nd$A, nd$B );
+      chai.expect(''+nd$grad[0].tolist())
+        .to.equal('0.25,0.25,0.25,0.25');
+    });
+    
   });
   // let nd$G = Number([[Math.pi() ]])
-  // describe('non-linear ops', function(){
-  //   it(' tanh(A) = ', function(){
-  //     let nd$C = Op.dot(nd$A, nd$B);
-  //     chai.expect(''+nd$C.tolist()).to.equal('3,4,7,10');
-  //   });
-  //   it(' sin(A) = ', function(){
-  //     let nd$C = Op.dot(nd$A, nd$B);
-  //     chai.expect(''+nd$C.tolist()).to.equal('3,4,7,10');
-  //   });
-  //   it(' cos(A) = ', function(){
-  //     let nd$C = Op.dot(nd$A, nd$B);
-  //     chai.expect(''+nd$C.tolist()).to.equal('3,4,7,10');
-  //   });
-  // })
+  describe('non-linear ops', function(){
+    it(' grad pow(A,2) = 2*A', function(){
+      let nds$grad = gradOpt$1wC( Op.pow, nd$A, 2 );
+      chai.expect(''+nds$grad[0].tolist())
+        .to.equal('0,2,2,4');
+    });
+    // it(' sin(A) = ', function(){
+    //   let nd$C = Op.dot(nd$A, nd$B);
+    //   chai.expect(''+nd$C.tolist()).to.equal('3,4,7,10');
+    // });
+    // it(' cos(A) = ', function(){
+    //   let nd$C = Op.dot(nd$A, nd$B);
+    //   chai.expect(''+nd$C.tolist()).to.equal('3,4,7,10');
+    // });
+  })
   describe('basic ops', function(){
     // it(' B / B = [[1,1],[1,1]]', function(){
     //   let nd$C = Op.div(nd$B, nd$B);

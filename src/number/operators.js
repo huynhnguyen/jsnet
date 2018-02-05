@@ -1,19 +1,10 @@
 "use strict";
 const nd = require('./ndarray');
-const GradOps = require('./autograd/gradOps');
 const Number = require('./number');
 
-const Operators = {}
+const Operators = {};
 
-if (typeof module !== 'undefined') {
-  module.exports   = Operators;
-} 
-if (typeof window !== 'undefined') {
-  window.Operators = Operators;
-}
-
-Operators.dot = (nbA,nbB, stopGrad, prefix)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.dot = (nbA,nbB)=>{
   const _dot$1d = (sA, sB, nS)=>{
     let newShape = [1], newValue = new Float32Array(1);
     for(let v = 0; v < nS; v++){
@@ -100,18 +91,12 @@ Operators.dot = (nbA,nbB, stopGrad, prefix)=>{
   }
 
   let ret = _checkShapeThenRun(nbA, nbB);
-  
-  if(stopGrad===false && GradOps.dot){
-    // console.warn('go there')
-    ret = GradOps.dot(ret, [nbA,nbB]);
-  }
   return ret;
 };
 
 
-Operators.T = (nbA, stopGrad)=>{
+Operators.T = (nbA)=>{
   // validateDotShape(a.shape,b.shape);
-  stopGrad = stopGrad?stopGrad:false;
   const sA = nbA.shape, space = nbA.space;
   let newShape = sA.slice().reverse();
   let newValue = new Float32Array(nd.getVolume(newShape));
@@ -124,45 +109,30 @@ Operators.T = (nbA, stopGrad)=>{
   return Number(newValue, newShape);
 };
 
-Operators.pow = (nd, hat, stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.pow = (nd, hat )=>{
   let newValue = nd.value.map(d=>Math.pow(d,hat));
   let ret = Number(newValue, nd.shape);
-  if(stopGrad===false && GradOps.pow){
-    ret = GradOps.pow(ret, nd, hat);
-  }
-  console.warn(ret);
   return ret;
 }
 
-Operators.exp = (nd, stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.exp = (nd )=>{
   let newValue = nd.value.map(d=>Math.exp(d));
   let ret      = Number(newValue, nd.shape);
-  if(nd.grad){
-    ret.grad = [{ father: nd.grad, 
-      vjp_op: (x)=>Math.exp(x) }]
-  }
   return ret;
 }
 
-Operators.tanh = (nd, stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.tanh = (nd )=>{
   let newValue = nd.value.map(d=>Math.tanh(d));
   let ret      = Number(newValue, nd.shape);
-  if(GradOps.tanh){
-    ret = GradOps.tanh(ret, nd);
-  }
   return ret;
 }
 
-Operators.sigmoid = (nd,stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
-  let newValue = nd.value.map(d=>0.5*(Math.tanh(d)+1.0));
+Operators.sigmoid = (nd)=>{
+  throw Error('not implement');
   return Number(newValue, nd.shape);
 }
 
-Operators.relu = (nd,stopGrad)=>{
+Operators.relu = (nd,)=>{
   throw Error('not implement');
 };
 
@@ -203,69 +173,56 @@ const validateOps = (nbA, valB)=>{
   throw Error('invalide object type');
 }
 
-Operators.add = (a,b,stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.add = (a,b)=>{
   const addOp   = (d1,d2)=>d1+d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, addOp);
   let ret = Number(newValue, newShape);
-  if(stopGrad===false && GradOps.add){
-    ret = GradOps.add(ret, [a,b]);
-  }
   return ret;
 };
 
-Operators.minus = (a,b,stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.minus = (a,b)=>{
   const minusOp = (d1,d2)=>d1-d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, minusOp);
   let ret = Number(newValue, newShape);
-  if(stopGrad===false && GradOps.minus){
-    ret = GradOps.minus(ret, [a,b]);
-  }
   return ret;
 };
 
-Operators.mul = (a,b,stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.mul = (a,b)=>{
   const mulOp   = (d1,d2)=>d1*d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, mulOp);
   return Number(newValue, newShape);  
 };
 
-Operators.div = (a,b,stopGrad)=>{
-  stopGrad = stopGrad?stopGrad:false;
+Operators.div = (a,b)=>{
   const divOp   = (d1,d2)=>d1/d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, divOp);     
   return Number(newValue, newShape);
 };
 
-Operators.mean = (a, axis, stopGrad)=>{
+Operators.mean = (nb$0, axis)=>{
   //TODO: implement for axis selector
-  stopGrad = stopGrad?stopGrad:false;
-  axis     = axis?axis:-1;
+  axis = axis?axis:-1;
   let ret;
   if(axis === -1){
-    const ll = a.value.length;
+    const ll = nb$0.value.length;
     let newShape = [1];
     let newValue = new Float32Array( nd.getVolume(newShape) );
-    newValue[0] = a.value
-      .reduce((s,v)=>s += v, 0)/ll;
+    newValue[0] = nb$0.value.reduce((s,v)=>s += v, 0)/ll;
     ret = Number( newValue, newShape );
   }
   else{
-    let selector = a.shape.map((d,i)=> i!==axis?0:[0,d,1]);
-    // for(let px of nd.indexGenerator(, nd.getSpace(a.shape)) ){
-    //   console.warn(px);
-    // }
-  }
-  if(stopGrad===false && GradOps.mean){
-    ret = GradOps.mean(ret, a);
+    let selector = nb$0.shape.map((d,i)=> i!==axis?0:[0,d,1]);
   }
   return ret;  
 }
 
-// Operators.argmax()
+if (typeof module !== 'undefined') {
+  module.exports   = Operators;
+} 
+if (typeof window !== 'undefined') {
+  window.Operators = Operators;
+}
