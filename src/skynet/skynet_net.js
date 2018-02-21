@@ -1,5 +1,5 @@
 var _ = require('underscore');
-var nb = require('skynet_numberjs');
+var nb = require('skynet_Numbjs');
 // var Helper = require('./skynet_helper')
 // Log = Helper().logger;
 

@@ -16,7 +16,7 @@
 			$('#log').html(msg);
 		}
 		
-		var nb = Number([ [ 1,  2,  3,  4],
+		var nb = Numb([ [ 1,  2,  3,  4],
 						  [ 5,  6,  7,  8], 
 						  [ 9, 10, 11, 12] ]);
 		
@@ -45,7 +45,7 @@
 
 		// operators test
 
-		var nb$ = Number([ [ 1, 2, 3, 4],
+		var nb$ = Numb([ [ 1, 2, 3, 4],
 						   [ 5, 6, 7, 8] ]);
 		console.table(nb$.tolist());
 		console.warn('Operator add');
@@ -97,12 +97,12 @@
 		console.warn( nb3.shape );
 		console.warn( nb3.tolist());
 
-		var nA = Number([ [1,2],
+		var nA = Numb([ [1,2],
 						  [2,3],
 						  [3,4] ])
 					.reshape([3,2]);
 		
-		var nB = Number([ [1,2,3],
+		var nB = Numb([ [1,2,3],
 						  [2,3,4] ])
 					.reshape([2,3]);
 
@@ -115,7 +115,7 @@
 							    nB.reshape([1,2,3]) );
 		console.warn(nD.tolist());
 		
-		var nE = Number([ [ 1, 2, 3, 4, 5, 6],
+		var nE = Numb([ [ 1, 2, 3, 4, 5, 6],
 						  [ 7, 8, 9,10,11,12],
 						  [13,14,15,16,17,18] ]);
 

@@ -1,18 +1,18 @@
 "use strict";
-const getShape  = (arr)=>(typeof arr === 'number')?
-	null:[arr.length].concat(getShape(arr[0])).filter(d=>d);
+const getShape  = (arr)=>(Array.isArray(arr))?
+  [arr.length, ...getShape(arr[0])].filter(d=>d):[null];
 
 const getSpace = (shape)=>shape.length==0?
 		1:shape.reduceRight(
 			(ss,d,i,shape)=>(i==shape.length-1)?
-				[1]:[ ss[0]*shape[i+1],...ss],[]
+        [1]:[ ss[0]*shape[i+1],...ss],[]
 		)
 
 // shape = [4,3,4];
 // console.log(getSpace(shape));
 
-const getVolume = (shape)=>shape.length==0?
-		[]:shape.reduce((a,b)=>a*b);
+const getVolume = (shape)=>shape.length==0?[]:shape.reduce((a,b)=>a*b);
+const getVolumIndex = (idx, space)=> idx.reduce((s,d,i)=>s+d*space[i],0); 
 
 const clone = (refValue)=>{
   return (refValue instanceof Array)?
@@ -27,13 +27,12 @@ const remapIndex = (idx,sh)=>{
 
 const remapSelect = (sval, shape)=>{
   //numpy like selector
-  const vsp = typeof sval === 'string'?sval.split(','):
-    shape.map(d=>':');
+  const vsp = typeof sval === 'string'?sval.split(','):sval;
   if(vsp.length > shape.length){ throw Error('selector is not consitent with shape ') }
   const select = shape.map((sh,i)=>{
     const v = (i<vsp.length)?vsp[i]:':';
     if(''+(+v)==='NaN') { 
-    	//check if v is a number or not
+    	//check if v is a Numb or not
       let [l,h,st] = v.split(':');
       st = st? +st:1;
       l  = l ? +l:(st>0)?0:sh-1;
@@ -70,13 +69,18 @@ function *indexGenerator(selector, space, axis, idx){
   }
 }
 
-function *_indexGenerator(_selector, space, axis, idx){
-  	let [l,h,s] = _selector;
-  	while(l < h){
-  	  idx[axis] = l;	
-      yield {idx:idx,vx:idx.reduce((s,d,i)=>s+d*space[i],0)};
-      l += s;
+function *axisGenerator(axesSelector, shape, axis, idx){
+  axis = axis | 0;
+  if(idx === undefined){
+    idx = shape.map((d,i)=> (axesSelector.indexOf(i) === -1)?-1:0);
+  };
+  while( idx[axis] < shape[axis] ){
+    if( axis+1 < shape.length ){ 
+      yield *axisGenerator(axesSelector,shape,axis+1,idx.slice()); 
     }
+    else{ yield idx.map(d=>d==-1?':':d); }
+    idx[axis] = idx[axis]==-1?shape[axis]:idx[axis]+1;
+  }
 }
 
 function *enummerate(generator){
@@ -90,16 +94,26 @@ function *enummerate(generator){
 const ravel = (a) => a.reduce((s,a)=>{
 		return (a instanceof Array)?s.concat(ravel(a)):s.concat(a)
 	},[]);
+const range = (l, h)=>{
+  [l, h] = h?[l,h]:[0,l];
+  let ret = [];
+  for(let c = l; c < h; c += 1){ 
+      console.warn(c)
+      ret = [...ret, c]; }
+  return ret;
+}
 
 const ndarray = {
 	'getShape' : getShape,
 	'getSpace' : getSpace,
 	'getVolume': getVolume,
+  'getVolumIndex': getVolumIndex,
 	'clone': clone,
 	'remapSelect':remapSelect,
 	'indexGenerator': indexGenerator,
-	'_indexGenerator': _indexGenerator,
+  'axisGenerator': axisGenerator,
 	'enummerate': enummerate,
-	'ravel':ravel
+	'ravel':ravel,
+  'range':range
 }
 module.exports = ndarray;

@@ -1,6 +1,6 @@
 "use strict";
 const nd = require('./ndarray');
-const Number = require('./number');
+const Numb = require('./numb');
 
 const Operators = {};
 
@@ -10,7 +10,7 @@ Operators.dot = (nbA,nbB)=>{
     for(let v = 0; v < nS; v++){
       newValue[0] += nbA.value[v]*nbB.value[v];  
     }
-    return Number(newValue, newShape);
+    return Numb(newValue, newShape);
   }
   const _dot$2d = (sA, sB, nS, pA, pB)=>{
     let newShape = [ sA[0],sB[1] ];
@@ -24,28 +24,28 @@ Operators.dot = (nbA,nbB)=>{
         newValue[vx] += nbA.value[aVx]*nbB.value[bVx];
       }
     } 
-    return Number(newValue, newShape);
+    return Numb(newValue, newShape);
   }
-  const _checkShapeThenRun = (ndA, ndB)=>{
+  const _checkShapeThenRun2 = (ndA, ndB)=>{
     const sA = nbA.shape, sB = nbB.shape;
     const pA = nbA.space, pB = nbB.space;
-    if(sA.length==1 && sB.length==1){
+    if(sA.length == 1 && sB.length == 1){
       const nS = sA[0]===sB[0]?sA[0]:null;
       if(nS===null){ throw Error( 'shape not consitent' ) }  
       return _dot$1d(sA, sB, nS);
     }
-    else if(sA.length==2 && sA.length==2){
+    else if(sA.length == 2 && sA.length == 2){
       const nS = sA[1]===sB[0]?sA[1]:null;
       return _dot$2d(sA, sB, nS, pA, pB);
     }
-    else if(sA.length>2 && sB.length ==2){
+    else if(sA.length > 2 && sB.length == 2){
       const sA$l = sA.length;
       const nS = sA[sA$l - 1]===sB[0]?sA[sA$l - 1]:null;
       if(nS===null){ throw Error( 'shape not consitent' ) }  
       let newShape = [ ...sA.slice(0,-1), sB[1] ];
       let newValue = new Float32Array( nd.getVolume(newShape) );
-      let ret = Number(newValue, newShape);   
-      console.log('newShape', newShape);
+      let ret = Numb(newValue, newShape);   
+      // console.log('newShape', newShape);
       let selector = sA.map((d,i)=>(i < (sA$l - 2))?[0,d,1]:d);
       let leftSelect;
       for(let px of nd.indexGenerator(selector, sA)){
@@ -58,7 +58,27 @@ Operators.dot = (nbA,nbB)=>{
       }
       return ret;
     }
-    else if(sA.length>2 && sB.length >2){
+    // else if(sA.length == 2 && sB.length == 2){
+    //   const sA$l = sA.length;
+    //   const nS = sA[sA$l - 1]===sB[0]?sA[sA$l - 1]:null;
+    //   if(nS===null){ throw Error( 'shape not consitent' ) }  
+    //   let newShape = [ ...sA.slice(0,-1), sB[1] ];
+    //   let newValue = new Float32Array( nd.getVolume(newShape) );
+    //   let ret = Numb(newValue, newShape);   
+    //   // console.log('newShape', newShape);
+    //   let selector = sA.map((d,i)=>(i < (sA$l - 2))?[0,d,1]:d);
+    //   let leftSelect;
+    //   for(let px of nd.indexGenerator(selector, sA)){
+    //     leftSelect = px.idx.slice(0,-2).join(',') + ',:,:';
+    //     // console.warn('loop', leftSelect);
+    //     // console.warn(ndA.v[leftSelect]);
+    //     let _innerRet = Operators.dot(ndA.v[leftSelect], ndB);
+    //     // console.warn(_innerRet);
+    //     ret.v[leftSelect] = _innerRet;
+    //   }
+    //   return ret;
+    // }
+    else if(sA.length > 2 && sB.length > 2){
       const sA$l = sA.length, sB$l = sB.length;
       const nS = sA[sA$l - 1]===sB[sB$l - 2]?sA[sA$l - 1]:null;
       if(nS===null){ throw Error( 'shape not consitent' ) }  
@@ -66,7 +86,7 @@ Operators.dot = (nbA,nbB)=>{
                         ...sB.slice(0,-2), 
                         ...sB.slice(-1)   ];
       let newValue = new Float32Array( nd.getVolume(newShape) );
-      let ret = Number(newValue, newShape);   
+      let ret = Numb(newValue, newShape);   
       // console.log('newShape', newShape);
       let leftSelector  = sA.map((d,i)=>(i<(sA$l-2))?[0,d,1]:d);
       let rightSelector = sB.map((d,i)=>(i<(sB$l-2))?[0,d,1]:d);
@@ -90,46 +110,82 @@ Operators.dot = (nbA,nbB)=>{
     }
   }
 
-  let ret = _checkShapeThenRun(nbA, nbB);
+  const _checkShapeThenRun = (nbA, nbB)=>{
+    const sA = nbA.shape, sB = nbB.shape;
+    const pA = nbA.space, pB = nbB.space;
+    if(sA.length == 1 && sB.length == 1){
+      const nS = sA[0]===sB[0]?sA[0]:null;
+      if(nS===null){ throw Error( 'shape not consitent' ) }  
+      return _dot$1d(sA, sB, nS);
+    }
+    else if(sA.length == 2 && sA.length == 2){
+      const nS = sA[1]===sB[0]?sA[1]:null;
+      return _dot$2d(sA, sB, nS, pA, pB);
+    }
+  }
+
+  let ret = _checkShapeThenRun2(nbA, nbB);
   return ret;
 };
 
 
-Operators.T = (nbA)=>{
+Operators.T = (nbA, axis)=>{
   // validateDotShape(a.shape,b.shape);
-  const sA = nbA.shape, space = nbA.space;
-  let newShape = sA.slice().reverse();
+  const sA = nbA.shape;
+  let newShape = sA.slice(), rAxisMap;//mapping from T axis to origin axis
+  axis = axis?axis:null;
+  if( axis ){
+    [newShape, rAxisMap ] = newShape.reduce((ss_ridx,d,i)=>{
+      let [ss, raxis ] = ss_ridx;
+      ss[ axis.indexOf(i) ] = d;
+      raxis[ axis.indexOf(i) ] = i;
+      return [ss, raxis];
+    },[axis.slice(),{}])
+  }
+  else{
+    newShape = newShape.reverse();
+  }
+  if( nd.getVolume(newShape) !== nd.getVolume(sA) ){ throw Error('shape not consistent') };
   let newValue = new Float32Array(nd.getVolume(newShape));
   const selector = newShape.map(d=>[0,d,1]);
+  const space = nbA.space;
   for( let px of nd.indexGenerator(selector, nd.getSpace(newShape)) ){
     const idx = px.idx, vx = px.vx;
-    const rvx = idx.slice().reverse().reduce((s,d,i)=>s+d*space[i],0);
+    let  ridx = idx.slice();
+    if( axis ){ //TODO: improve this code
+      ridx = ridx.reduce((ss,d,i)=>{
+        ss[ rAxisMap[i] ] = d;
+        return ss;
+      }, idx.slice());
+    }
+    else{  ridx = ridx.reverse();  }
+    const rvx = ridx.reduce((s,d,i)=>s+d*space[i],0);
     newValue[vx] = nbA.value[rvx];
   }
-  return Number(newValue, newShape);
+  return Numb(newValue, newShape);
 };
 
 Operators.pow = (nd, hat )=>{
   let newValue = nd.value.map(d=>Math.pow(d,hat));
-  let ret = Number(newValue, nd.shape);
+  let ret = Numb(newValue, nd.shape);
   return ret;
 }
 
 Operators.exp = (nd )=>{
   let newValue = nd.value.map(d=>Math.exp(d));
-  let ret      = Number(newValue, nd.shape);
+  let ret      = Numb(newValue, nd.shape);
   return ret;
 }
 
 Operators.tanh = (nd )=>{
   let newValue = nd.value.map(d=>Math.tanh(d));
-  let ret      = Number(newValue, nd.shape);
+  let ret      = Numb(newValue, nd.shape);
   return ret;
 }
 
 Operators.sigmoid = (nd)=>{
   throw Error('not implement');
-  return Number(newValue, nd.shape);
+  return Numb(newValue, nd.shape);
 }
 
 Operators.relu = (nd,)=>{
@@ -155,10 +211,10 @@ const validateOps = (nbA, valB)=>{
     return vB.map((d,i)=>ops(d,nbA.value[0]));
   }
   // console.warn(typeof nbA, typeof valB);
-  if( Number().isNumber(nbA) && typeof valB === 'number' ){
+  if( Numb().isNumb(nbA) && typeof valB === 'numb' ){
     return [numMapping, nbA.shape];
   }
-  if( Number().isNumber(nbA) && Number().isNumber(valB) ){
+  if( Numb().isNumb(nbA) && Numb().isNumb(valB) ){
     let nbB = valB;
     if(nbB.value.length == 1){
       return [numMapping$2case1, nbA.shape];
@@ -177,7 +233,7 @@ Operators.add = (a,b)=>{
   const addOp   = (d1,d2)=>d1+d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, addOp);
-  let ret = Number(newValue, newShape);
+  let ret = Numb(newValue, newShape);
   return ret;
 };
 
@@ -185,7 +241,7 @@ Operators.minus = (a,b)=>{
   const minusOp = (d1,d2)=>d1-d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, minusOp);
-  let ret = Number(newValue, newShape);
+  let ret = Numb(newValue, newShape);
   return ret;
 };
 
@@ -193,31 +249,40 @@ Operators.mul = (a,b)=>{
   const mulOp   = (d1,d2)=>d1*d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, mulOp);
-  return Number(newValue, newShape);  
+  return Numb(newValue, newShape);  
 };
 
 Operators.div = (a,b)=>{
   const divOp   = (d1,d2)=>d1/d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, divOp);     
-  return Number(newValue, newShape);
+  return Numb(newValue, newShape);
 };
 
-Operators.mean = (nb$0, axis)=>{
+Operators.mean = (nbA, axis)=>{
   //TODO: implement for axis selector
-  axis = axis?axis:-1;
+  axis = axis?axis:null;
   let ret;
-  if(axis === -1){
-    const ll = nb$0.value.length;
+  if(axis === null){
+    const ll = nbA.value.length;
     let newShape = [1];
     let newValue = new Float32Array( nd.getVolume(newShape) );
-    newValue[0] = nb$0.value.reduce((s,v)=>s += v, 0)/ll;
-    ret = Number( newValue, newShape );
+    newValue[0] = nbA.value.reduce((s,v)=>s += v, 0)/ll;
+    ret = Numb( newValue, newShape );
   }
   else{
-    let selector = nb$0.shape.map((d,i)=> i!==axis?0:[0,d,1]);
+    let [newShape, selector] = nbA.shape.map((d,i)=> i!==axis?0:[0,d,1]);
+    // for( px of nd.axisGenerator([0,2],nd.getSpace()) ){
+    //   let idx = pdx.idx; 
+
+    // }
+    ret = Numb(newValue, newShape);
   }
   return ret;  
+}
+
+Operators.reduce = (nbA, aixs)=>{
+
 }
 
 if (typeof module !== 'undefined') {

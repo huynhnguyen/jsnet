@@ -1,11 +1,11 @@
 const Net = require('./skynet_net');
 const Helper = require('./skynet_helper');
-const Numberjs  = require('./skynet_numberjs');
+const Numbjs  = require('./skynet_Numbjs');
 const Ultils = require('./') 
 const Skynet  = {};
 Skynet.helper = Helper;
 Skynet.net = Net;
-Skynet.nb = Numberjs;
+Skynet.nb = Numbjs;
 // Skynet.ultils = Ultils;
 
 if (typeof module !== 'undefined') {

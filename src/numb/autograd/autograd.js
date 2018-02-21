@@ -1,7 +1,7 @@
 "use strict";
 const nd = require('../ndarray');
 const Ops  = require('../operators');
-const Number = require('../number');
+const Numb = require('../Numb');
 const GradOps = require('./gradOps');
 
 
@@ -47,14 +47,16 @@ const backward = (outputGrad, inputGrads, debug)=>{
     // console.warn(vjp);
     return vjp?vjp(outputGrad, nb):outputGrad;
   }
-  const runTransformBW = (outputGrad, inputGrads, transform)=>{
-    console.warn('transform', outputGrad.transformRet)
-    return transform?transform(outputGrad, inputGrads): outputGrad;
+  const runTransformBW = (outputGrad, op_inputs, transform)=>{
+    // console.warn('transform', inputGrads, inputGrads.map(d=>d.op_inputs));
+    // return transform?transform(outputGrad, inputGrads): outputGrad;
+    return transform?transform(outputGrad, op_inputs): outputGrad;
   }
   const runBackWard = (outputGrad, inputGrads)=>{
     if(inputGrads){
-      let bwNb = runTransformBW(outputGrad, inputGrads, outputGrad.transformRet); 
       let preGrads = inputGrads.map( (g, idx) => {
+                const transformOp = outputGrad.transformRet;
+                let bwNb = runTransformBW(outputGrad, g.op_inputs, transformOp); 
                 let bw = g.bw, vjp = g.vjp, vid = g.vid;
                 let bwGrad = runVJP(bwNb, bw, vjp);
                 bwGrad.vid = vid;
@@ -102,9 +104,9 @@ for(let opName in Ops){
 
 Autograd.grad = function(func){
   const wrapper = (...inputs)=>{
-    for( let [nd$0, c] of nd.enummerate(inputs) ) {
-      if(Number().isNumber(nd$0) && nd$0.grad !== false){
-        nd$0.grad = [{ vid: c, bw: null, vjp:null}];
+    for( let [nb$0, c] of nd.enummerate(inputs) ) {
+      if(Numb().isNumb(nb$0) && nb$0.grad !== false){
+        nb$0.grad = [{ vid: c, bw: null, vjp:null, input: nb$0 }];
       }
     }
     let nd$out   = func(...inputs);
@@ -113,7 +115,7 @@ Autograd.grad = function(func){
     let _nds$grad = backward( nd$out, nd$out.grad, debug);
     let _nds$gradSum  = _nds$grad.reduce((ss,g)=>{
         const _vid = g.vid;
-        ss[_vid] = ss[_vid]?Ops.add(ss[_vid], g, NoGrad):g;  
+        ss[_vid] = ss[_vid]?Ops.add(ss[_vid], g):g;  
         return ss;
       },{})
     // console.warn( _nds$gradSum );

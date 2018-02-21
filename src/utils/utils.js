@@ -1,6 +1,6 @@
 "use strict";
 const nd = require('./ndarray');
-const Number = require('./number');
+const Numb = require('./Numb');
 
 const Utils = {}
 

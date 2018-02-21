@@ -16,19 +16,19 @@ const Selector = {
       // console.warn(idx, vx);
       valueNew[c] = value[vx]; 
     }
-    return new number(valueNew, shapeNew);
+    return new numb(valueNew, shapeNew);
   },
   set:function(d, selectString, newValue){
     let value = d.v, shape = d.sh, space = d.sp; 
     const selector = nd.remapSelect(selectString, shape);
     const getAtFunc = (newValue)=>{
-      if(typeof newValue === 'number'){ return {getAt:(counter)=>newValue}; }
+      if(typeof newValue === 'numb'){ return {getAt:(counter)=>newValue}; }
       if(newValue instanceof Array){
         //TODO: implement check shape
         let valueFlatten = nd.ravel(newValue);
         return {getAt:(counter)=>valueFlatten[counter]};
       }
-      if(newValue.type === 'Number'){
+      if(newValue.type === 'Numb'){
         //TODO: implement check shape
         let v = newValue.value;
         return {getAt:(counter)=>v[counter]};
@@ -42,7 +42,7 @@ const Selector = {
     return d;
   }
 }
-function number(value, shape){
+function numb(value, shape){
   if(shape) {
     this.shape  = nd.clone(shape);
     this.volume = nd.getVolume(this.shape);
@@ -50,6 +50,7 @@ function number(value, shape){
     this.value  = value;
   }
   else if(value){
+    // console.warn('value', value);
     const _shape  = nd.getShape(value);
     this.shape    = nd.clone(_shape);
     this.volume = nd.getVolume(this.shape);
@@ -65,35 +66,35 @@ function number(value, shape){
     //TODO: this is op instance
     this.grad = null;
   }
-  this.type = 'Number'
+  this.type = 'Numb'
   this.v = new Proxy({v:this.value, sh:this.shape, sp: this.space}, Selector);
 }
 
 
-function Number(value, shape){
-  return new number(value, shape);
+function Numb(value, shape){
+  return new numb(value, shape);
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = Number;
+  module.exports = Numb;
 } 
 if (typeof window !== 'undefined') {
-  window.Number = Number;
+  window.Numb = Numb;
 }
 
-number.prototype.isNumber = (nd)=>{
-  return (nd.type === 'Number')?true:false   
+numb.prototype.isNumb = (nd)=>{
+  return (nd.type === 'Numb')?true:false   
 };
 
-number.prototype.reshape = function(newShape){
+numb.prototype.reshape = function(newShape){
   const newVolume = nd.getVolume(newShape);
   if(newVolume !== this.volume){
     throw Error('shape is not consistent');
   }
-  return new number(this.value, newShape);
+  return new numb(this.value, newShape);
 };
 
-number.prototype.tolist = function(){
+numb.prototype.tolist = function(){
   let list = this.shape.slice().reverse().reduce((l,s)=>{
     let ll = l.reduce((d,v)=>{
               d.tmp.push(v);

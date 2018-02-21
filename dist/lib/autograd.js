@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "d831ce12f7eca206708b"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "84b57fb8dd6084e4d6d2"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -1238,15 +1238,16 @@ GradOps.minus = (ret, nds) => {
   return ret;
 };
 
-GradOps.dot = (ret, nbs) => {
-  const nd0_grad = (ret, nd$0) => {
+GradOps.dot = (ret, nbA, nbB) => {
+  let nbs = [nbA, nbB];
+  const nb0_grad = (ret, nd$0) => {
     let sR = ret.shape,
         s$0 = nd$0.shape;
     let pR = ret.space,
         p$0 = nd$0.space;
     if (s$0.length == 1) {} else if (s$0.length == 2) {} else if (s$0.length > 2) {}
   };
-  const nd1_grad = (ret, nd$1) => {
+  const nb1_grad = (ret, nd$1) => {
     let sR = ret.shape,
         s$0 = nd$1.shape;
     let pR = ret.space,
@@ -1264,10 +1265,13 @@ GradOps.dot = (ret, nbs) => {
     if (nb$1Shape.length > 2) {
       rightSelector = nb$0.shape.slice(0, -2);
     }
-    selector = leftSelector + ret.shape.slice(-2) + rightSelector + ret.shape.slice(-1);
-    for (let px of nb.inbexGenerator(selector, nb.getSpace())) return ret;
+    selector = leftSelector + ret.shape.slice(-2, -1) + rightSelector + ret.shape.slice(-1);
+    console.warn(selector);
+    for (let px of nb.inbexGenerator(selector, nb.getSpace())) {}
+    return ret;
   };
-  ret.transformRet = transformRet;
+  // ret.transformRet = transformRet;
+
   ret.grad = nbs.map((nb, i) => {
     if (nb.grad) {
       if (i == 0) {
@@ -1357,7 +1361,7 @@ const backward = (outputGrad, inputGrads, debug) => {
     return vjp ? vjp(outputGrad, nb) : outputGrad;
   };
   const runTransformBW = (outputGrad, inputGrads, transform) => {
-    console.warn('transform', outputGrad.transformRet);
+    // console.warn('transform', outputGrad.transformRet)
     return transform ? transform(outputGrad, inputGrads) : outputGrad;
   };
   const runBackWard = (outputGrad, inputGrads) => {
@@ -1424,7 +1428,7 @@ Autograd.grad = function (func) {
     let _nds$grad = backward(nd$out, nd$out.grad, debug);
     let _nds$gradSum = _nds$grad.reduce((ss, g) => {
       const _vid = g.vid;
-      ss[_vid] = ss[_vid] ? Ops.add(ss[_vid], g, NoGrad) : g;
+      ss[_vid] = ss[_vid] ? Ops.add(ss[_vid], g) : g;
       return ss;
     }, {});
     // console.warn( _nds$gradSum );
