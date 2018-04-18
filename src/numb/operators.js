@@ -211,10 +211,10 @@ const validateOps = (nbA, valB)=>{
     return vB.map((d,i)=>ops(d,nbA.value[0]));
   }
   // console.warn(typeof nbA, typeof valB);
-  if( Numb().isNumb(nbA) && typeof valB === 'numb' ){
+  if( Numb.isNumb(nbA) && typeof valB === 'number' ){
     return [numMapping, nbA.shape];
   }
-  if( Numb().isNumb(nbA) && Numb().isNumb(valB) ){
+  if( Numb.isNumb(nbA) && Numb.isNumb(valB) ){
     let nbB = valB;
     if(nbB.value.length == 1){
       return [numMapping$2case1, nbA.shape];
@@ -229,13 +229,17 @@ const validateOps = (nbA, valB)=>{
   throw Error('invalide object type');
 }
 
-Operators.add = (a,b)=>{
-  const addOp   = (d1,d2)=>d1+d2;
+const add_primitive = (a,b)=>{
+  console.warn('add primitive', a, b);
+  const addOp = (d1,d2)=>d1+d2;
   const [mapping, newShape] = validateOps(a,b);
   let newValue  = mapping(a, b, addOp);
+  console.warn('new 3', newValue, newShape)
   let ret = Numb(newValue, newShape);
   return ret;
 };
+
+Operators.add = add_primitive
 
 Operators.minus = (a,b)=>{
   const minusOp = (d1,d2)=>d1-d2;
@@ -271,12 +275,18 @@ Operators.mean = (nbA, axis)=>{
     ret = Numb( newValue, newShape );
   }
   else{
-    let [newShape, selector] = nbA.shape.map((d,i)=> i!==axis?0:[0,d,1]);
-    // for( px of nd.axisGenerator([0,2],nd.getSpace()) ){
-    //   let idx = pdx.idx; 
-
-    // }
-    ret = Numb(newValue, newShape);
+    let Ash = nbA.shape;
+    let [newShape, selector] = Ash.reduce((ss,d,i)=>{
+                 if(i==axis){ ss[0] = [...ss[0],i] }
+                 else{ ss[1] = [...ss[1],d] }
+                 return ss;
+            },[[],[]]);
+    let ret = Numb(0,newShape);
+    for(idx of nd.axisGenerator([axis], newShape)){
+      ret = Operators.add( ret, nbA.v[idx] ); 
+    }
+    let norm = Ash[axis];
+    ret = Operators.div(ret, norm);
   }
   return ret;  
 }

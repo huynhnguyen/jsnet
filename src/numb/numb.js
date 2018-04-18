@@ -22,7 +22,7 @@ const Selector = {
     let value = d.v, shape = d.sh, space = d.sp; 
     const selector = nd.remapSelect(selectString, shape);
     const getAtFunc = (newValue)=>{
-      if(typeof newValue === 'numb'){ return {getAt:(counter)=>newValue}; }
+      if( typeof newValue === 'numb' ){ return {getAt:(counter)=>newValue}; }
       if(newValue instanceof Array){
         //TODO: implement check shape
         let valueFlatten = nd.ravel(newValue);
@@ -44,12 +44,20 @@ const Selector = {
 }
 function numb(value, shape){
   if(shape) {
-    this.shape  = nd.clone(shape);
+    this.shape  = nd.shape(shape);
     this.volume = nd.getVolume(this.shape);
     this.space  = nd.getSpace(this.shape);
-    this.value  = value;
+    if(Number.parseFloat(value)){
+      let fvalue = Number.parseFloat(value);
+      this.value = new Float32Array(this.volume);
+      this.value.map((d)=>d = fvalue);
+    }
+    else{
+      //TODO: it assumes value is float32array which is not safe
+      this.value  = value;
+    }
   }
-  else if(value){
+  else if(value.length){
     // console.warn('value', value);
     const _shape  = nd.getShape(value);
     this.shape    = nd.clone(_shape);
@@ -64,7 +72,7 @@ function numb(value, shape){
   }
   else{
     //TODO: this is op instance
-    this.grad = null;
+    throw Error('not support type');
   }
   this.type = 'Numb'
   this.v = new Proxy({v:this.value, sh:this.shape, sp: this.space}, Selector);
@@ -72,6 +80,7 @@ function numb(value, shape){
 
 
 function Numb(value, shape){
+  if( !Array.isArray(shape) ){ shape = null }
   return new numb(value, shape);
 }
 
@@ -82,8 +91,8 @@ if (typeof window !== 'undefined') {
   window.Numb = Numb;
 }
 
-numb.prototype.isNumb = (nd)=>{
-  return (nd.type === 'Numb')?true:false   
+Numb.isNumb = (nb)=>{
+  return (nb.type === 'Numb')?true:false   
 };
 
 numb.prototype.reshape = function(newShape){

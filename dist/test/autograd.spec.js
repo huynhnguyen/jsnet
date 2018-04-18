@@ -1,10 +1,10 @@
 const chai = require('chai');
-const Number = require('../src/number/number');
-const Autograd = require('../src/number/autograd/autograd');
+const Numb = require('../src/numb/numb');
+const Autograd = require('../src/numb/autograd/autograd');
 const Op = Autograd.Operators;
 describe('autograd', function() {
-  let nd$A = Number([[0,1],[1,2]]);
-  let nd$B = Number([[1,2],[3,4]]);
+  let nd$A = Numb([[0,1],[1,2]]);
+  let nd$B = Numb([[1,2],[3,4]]);
   const gradOpt$2 = (func, nbA, nbB)=>{
     let grad = Autograd.grad( func );
     return grad(nbA,nbB);
@@ -25,13 +25,13 @@ describe('autograd', function() {
     });
 
     it(' grad dot(A, B) = [],[]', function(){
-      let nd$grad = gradOpt$2( Op.dot, nd$A, nd$B );
-      // chai.expect(''+nd$grad[0].tolist())
-      //   .to.equal('0.25,0.25,0.25,0.25');
+      let nd$grad = gradOpt$2( Op.dot, nd$A.reshape([1,2,2]), nd$B.reshape([1,2,2]) );
+      chai.expect(''+nd$grad[0].tolist())
+        .to.equal('0.25,0.25,0.25,0.25');
     });
 
   });
-  // let nd$G = Number([[Math.pi() ]])
+  // let nd$G = Numb([[Math.pi() ]])
   describe('non-linear ops', function(){
     it(' grad pow(A,2) = 2*A', function(){
       let nds$grad = gradOpt$1wC( Op.pow, nd$A, 2 );

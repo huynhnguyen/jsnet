@@ -13,7 +13,7 @@ describe('Operators', function() {
     // });
     it(' mean(A) = 1', function(){
       let nd$M1 = Op.mean(nbA);
-      let nd$M2 = Op.mean(nbC.reshape([2,3,2]));
+      let nd$M2 = Op.mean(nbA, 1);
       chai.expect(''+nd$M1.tolist()).to.equal('1');
       chai.expect(''+nd$M2.tolist()).to.equal('6.5');
     });

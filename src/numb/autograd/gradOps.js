@@ -1,4 +1,4 @@
-const Numb = require('../Numb');
+const Numb = require('../numb');
 const nd = require('../ndarray');
 const Operators = require('../operators');
 const Op = Operators;
@@ -77,7 +77,7 @@ GradOps.dot = (ret, nbA, nbB)=>{
                  if(_selAxis.indexOf(i)==-1){ ss[0] = [...ss[0],i] }
                  else{ ss[1] = [...ss[1],d] }
                  return ss;
-            },[[],[]])
+            },[[],[]]);
         let newValue = new Float32Array(nd.getVolume(newShape));
         let reformedRet = Numb(newValue, newShape );  
         for(idx of nd.axisGenerator(selAxis, ret.shape)){

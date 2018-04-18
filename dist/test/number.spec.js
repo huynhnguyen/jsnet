@@ -1,8 +1,8 @@
 const chai = require('chai');
-const nd 	 = require('../src/number/ndarray');
-const Number = require('../src/number/number');
+const nd 	 = require('../src/numb/ndarray');
+const Numb = require('../src/numb/numb');
 
-describe('Number', function() {
+describe('Numb', function() {
   describe('ndarray', function(){
     describe('index remap', function(){
       it('"0,0" => 0,0', function(){ 
@@ -49,12 +49,20 @@ describe('Number', function() {
         chai.expect( '' + o$idx[2] ).to.equal( '1,0' );
         chai.expect( '' + o$idx[3] ).to.equal( '1,1' );
         chai.expect( '' + o$vx  ).to.equal( '0,1,2,3' );
-      })
+      });
+      it('generate for axes [0]', function(){
+        let o$idx = [];
+        for(px of nd.axisGenerator([0], [2,2])){
+          o$idx = [ ...o$idx, px ];
+        }
+        chai.expect( '' + o$idx[0] ).to.equal( '0,:' );
+        chai.expect( '' + o$idx[1] ).to.equal( '1,:' );
+      });
     });
   });
-  describe('basic test for number', function() {
-    var nA = Number([  [0,1],
-    	               [2,3]  ]);
+  describe('basic test for numb', function() {
+    var nA = Numb([  [0,1],
+    	                 [2,3]  ]);
     it('should return the correct shape', function() {
       chai.expect(nA.shape.join(',')).to.equal('2,2');
     });

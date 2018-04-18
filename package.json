@@ -24,6 +24,7 @@
     "express": "^4.15.5",
     "html-webpack-plugin": "^2.30.1",
     "mocha": "3.3.0",
+    "nodemon": "^1.15.1",
     "nyc": "^11.4.1",
     "webpack": "3.1.0",
     "webpack-dev-middleware": "^1.12.0",
@@ -35,7 +36,7 @@
     "start": "webpack-dev-server --open",
     "dev": "webpack --progress --colors --watch --env dev & npm run start",
     "test": "mocha --compilers js:babel-core/register --colors ./test/*.spec.js",
-    "coverage":"nyc mocha",
+    "coverage": "nyc mocha",
     "test:watch": "mocha --compilers js:babel-core/register --colors -w ./test/*.spec.js"
   },
   "repository": {

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>benchmark numberjs with mathjs</title>
+	<title>benchmark Numbjs with mathjs</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.16.3/math.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 	<script type="text/javascript" src="/dist/lib/operators.js"></script>
-	<script type="text/javascript" src="/dist/lib/number.js"></script>
+	<script type="text/javascript" src="/dist/lib/Numb.js"></script>
 	<script type="text/javascript" src=""></script>
 </head>
 <body>
@@ -24,8 +24,8 @@
 			let matV = math.multiply(matA, matB);
 			console.timeEnd('mul');
 			console.log(matV);
-			let ndA = Number(lA);
-			let ndB = Number(lB);
+			let ndA = Numb(lA);
+			let ndB = Numb(lB);
 			console.time('skynet mul');
 			let ndC = Operators.dot(ndA, ndB);
 			console.timeEnd('skynet mul');
@@ -35,9 +35,9 @@
 		// benchMark([5,2],[2,5]);
 		const benchMarkTensor = (shA, shB)=>{
 			console.log(Date());
-			let ndA = Number([1,2,3,4,5,6,7,8,9,10,
+			let ndA = Numb([1,2,3,4,5,6,7,8,9,10,
 							  1,2,3,4,5,6,7,8,9,10]).reshape(shA);
-			let ndB = Number([1,2,3,4,5,6,7,8,9,10,
+			let ndB = Numb([1,2,3,4,5,6,7,8,9,10,
 							  1,2,3,4,5,6,7,8,9,10]).reshape(shB);
 			console.time('skynet mul');
 			let ndC = Operators.dot(ndA, ndB);
@@ -45,7 +45,7 @@
 			console.table(ndC.tolist());
 		}
 		// benchMarkTensor([2,5],[5,2]);
-		// let ndB = Number([1,2,3,4,5,6,7,8,9,10]).reshape([1,2,5]);
+		// let ndB = Numb([1,2,3,4,5,6,7,8,9,10]).reshape([1,2,5]);
 		// let _nd = ndB.v['0,:,:'];
 		// console.warn(_nd);
 		benchMarkTensor([1,2,2,5],[2,5,2]);
@@ -55,5 +55,5 @@
 		
 	})();
 </script>
-<script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/number.js"></script></body>
+<script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/numb.js"></script></body>
 </html>

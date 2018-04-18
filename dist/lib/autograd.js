@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "84b57fb8dd6084e4d6d2"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "e9b5063148c80822181e"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -715,7 +715,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.h = function() { return hotCurrentHash; };
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return hotCreateRequire(4)(__webpack_require__.s = 4);
+/******/ 	return hotCreateRequire(3)(__webpack_require__.s = 3);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -725,175 +725,61 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 
-const nd = __webpack_require__(1);
+const U = __webpack_require__(5);
 
-const Selector = {
-  get: function (d, selectString) {
-    let value = d.v,
-        shape = d.sh,
-        space = d.sp;
-    let selector = nd.remapSelect(selectString, shape);
-    let shapeNew = selector.map(d => d[2] ? 0 | (d[1] - d[0]) / d[2] : null).filter(d => d);
-    shapeNew = shapeNew.length == 0 ? [1] : shapeNew;
-    let valueNew = new Float32Array(nd.getVolume(shapeNew));
-    // console.warn('get',selectString, selector, shapeNew)
-    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, nd.getSpace(shape)))) {
-      const idx = px.idx,
-            vx = px.vx;
-      // console.warn(idx, vx);
-      valueNew[c] = value[vx];
-    }
-    return new number(valueNew, shapeNew);
-  },
-  set: function (d, selectString, newValue) {
-    let value = d.v,
-        shape = d.sh,
-        space = d.sp;
-    const selector = nd.remapSelect(selectString, shape);
-    const getAtFunc = newValue => {
-      if (typeof newValue === 'number') {
-        return { getAt: counter => newValue };
-      }
-      if (newValue instanceof Array) {
-        //TODO: implement check shape
-        let valueFlatten = nd.ravel(newValue);
-        return { getAt: counter => valueFlatten[counter] };
-      }
-      if (newValue.type === 'Number') {
-        //TODO: implement check shape
-        let v = newValue.value;
-        return { getAt: counter => v[counter] };
-      }
-    };
-    const func = getAtFunc(newValue);
-    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, space))) {
-      let idx = px.idx,
-          vx = px.vx;
-      value[vx] = func.getAt(c);
-    }
-    return d;
-  }
-};
-function number(value, shape) {
-  if (shape) {
-    this.shape = nd.clone(shape);
-    this.volume = nd.getVolume(this.shape);
-    this.space = nd.getSpace(this.shape);
-    this.value = value;
-  } else if (value) {
-    const _shape = nd.getShape(value);
-    this.shape = nd.clone(_shape);
-    this.volume = nd.getVolume(this.shape);
-    this.space = nd.getSpace(this.shape);
-    this.value = new Float32Array(this.volume);
-    const selector = this.shape.map(d => [0, d, 1]);
-    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, this.space))) {
-      let idx = px.idx,
-          vx = px.vx;
-      this.value[c] = idx.reduce((v, i) => v[i], value);
-    }
-  } else {
-    //TODO: this is op instance
-    this.grad = null;
-  }
-  this.type = 'Number';
-  this.v = new Proxy({ v: this.value, sh: this.shape, sp: this.space }, Selector);
-}
+const pIndex = (idx, size) => idx > -1 ? idx : size + idx;
 
-function Number(value, shape) {
-  return new number(value, shape);
-}
-
-if (true) {
-  module.exports = Number;
-}
-if (typeof window !== 'undefined') {
-  window.Number = Number;
-}
-
-number.prototype.isNumber = nd => {
-  return nd.type === 'Number' ? true : false;
-};
-
-number.prototype.reshape = function (newShape) {
-  const newVolume = nd.getVolume(newShape);
-  if (newVolume !== this.volume) {
-    throw Error('shape is not consistent');
-  }
-  return new number(this.value, newShape);
-};
-
-number.prototype.tolist = function () {
-  let list = this.shape.slice().reverse().reduce((l, s) => {
-    let ll = l.reduce((d, v) => {
-      d.tmp.push(v);
-      if (d.tmp.length === s) {
-        d.t.push(d.tmp);
-        d.tmp = [];
-      }
-      return d;
-    }, { t: [], tmp: [] });
-    return ll.t;
-  }, this.value)[0];
-  return list;
-};
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-const getShape = arr => typeof arr === 'number' ? null : [arr.length].concat(getShape(arr[0])).filter(d => d);
-
-const getSpace = shape => shape.length == 0 ? 1 : shape.reduceRight((ss, d, i, shape) => i == shape.length - 1 ? [1] : [ss[0] * shape[i + 1], ...ss], []);
-
-// shape = [4,3,4];
-// console.log(getSpace(shape));
-
-const getVolume = shape => shape.length == 0 ? [] : shape.reduce((a, b) => a * b);
-
-const clone = refValue => {
-  return refValue instanceof Array ? Object.assign([], refValue) : Object.assign({}, refValue);
-};
-
-const remapIndex = (idx, sh) => {
-  idx = idx > -1 ? idx : sh + idx;
-  if (idx < 0 || idx >= sh) {
-    throw Error('index invalid');
-  } else {
-    return idx;
-  }
+const remapIndex = (idx, size) => {
+  U.validateIndex(idx, size);
+  return pIndex(idx, size);
 };
 
 const remapSelect = (sval, shape) => {
   //numpy like selector
-  const vsp = typeof sval === 'string' ? sval.split(',') : shape.map(d => ':');
-  if (vsp.length > shape.length) {
-    throw Error('selector is not consitent with shape ');
-  }
-  const select = shape.map((sh, i) => {
-    const v = i < vsp.length ? vsp[i] : ':';
-    if ('' + +v === 'NaN') {
-      //check if v is a number or not
-      let [l, h, st] = v.split(':');
-      st = st ? +st : 1;
-      l = l ? +l : st > 0 ? 0 : sh - 1;
-      h = h ? +h : st > 0 ? sh : 0;
-      let check = [];
-      check.push(h > sh ? `IndexError: ${h} higher than ${sh}` : null);
-      check.push(st < 0 && h > l ? `IndexError: if st < 0, ${l} higher than ${h}` : null);
-      if (check.filter(d => d).length) {
-        throw Error('' + check);
-      }
+  const vsp = sval.split(',');
+  const select = shape.map((size, i) => {
+    let v = i < vsp.length ? vsp[i] : `0:${size}:1`;
+    console.log('v', v);
+    if (Number.isNaN(v)) {
+      console.log('s', v.split(':'));
+      // let [l,h,st] = v.split(':').map(d=>{ return Number(d) });
+      st = st ? st : 1;
+      U.validateIndexRange(l, h, st, size);
       return [l, h, st];
     } else {
-      return remapIndex(+v, sh);
+      return remapIndex(Number(v), size);
     }
   });
   return select;
 };
+
+const shapeSelector = {
+  get: function (s, sel) {
+    if (typeof sel !== 'symbol' && Number(sel)) {
+      let psel = remapIndex(Number(sel), s.length);
+      return s.slice()[psel];
+    } else {
+      return s.slice()[sel];
+    }
+  },
+  set: function (s, sel, val) {
+    sel = Number(sel) >= 0 ? sel : s.length + Number(sel);
+    s[sel] = val;
+    return s;
+  }
+};
+
+const shape = sh => {
+  let _sh = sh.slice();
+  return new Proxy(_sh, shapeSelector);
+};
+
+const getShape = arr => Array.isArray(arr) ? [arr.length, ...getShape(arr[0])].filter(d => d) : [null];
+
+const getSpace = shape => shape.length == 0 ? 1 : shape.reduceRight((ss, d, i, shape) => i == shape.length - 1 ? [1] : [ss[0] * shape[i + 1], ...ss], []);
+
+const getVolume = shape => shape.length == 0 ? [] : shape.reduce((a, b) => a * b);
+const getVolumIndex = (idx, space) => idx.reduce((s, d, i) => s + d * space[i], 0);
 
 function* indexGenerator(selector, space, axis, idx) {
   axis = axis | 0;
@@ -913,12 +799,18 @@ function* indexGenerator(selector, space, axis, idx) {
   }
 }
 
-function* _indexGenerator(_selector, space, axis, idx) {
-  let [l, h, s] = _selector;
-  while (l < h) {
-    idx[axis] = l;
-    yield { idx: idx, vx: idx.reduce((s, d, i) => s + d * space[i], 0) };
-    l += s;
+function* axisGenerator(axesSelector, shape, axis, idx) {
+  axis = axis | 0;
+  if (idx === undefined) {
+    idx = shape.map((d, i) => axesSelector.indexOf(i) === -1 ? -1 : 0);
+  };
+  while (idx[axis] < shape[axis]) {
+    if (axis + 1 < shape.length) {
+      yield* axisGenerator(axesSelector, shape, axis + 1, idx.slice());
+    } else {
+      yield idx.map(d => d == -1 ? ':' : d);
+    }
+    idx[axis] = idx[axis] == -1 ? shape[axis] : idx[axis] + 1;
   }
 }
 
@@ -934,18 +826,161 @@ const ravel = a => a.reduce((s, a) => {
   return a instanceof Array ? s.concat(ravel(a)) : s.concat(a);
 }, []);
 
+const range = (l, h, st) => {
+  st = st ? st : 1;
+  [l, h] = h ? [l, h] : [0, l];
+  for (let c = l; c < h; c += st) {
+    console.warn(c);
+    ret = [...ret, c];
+  }
+  return ret;
+};
+
 const ndarray = {
   'getShape': getShape,
   'getSpace': getSpace,
   'getVolume': getVolume,
-  'clone': clone,
+  'getVolumIndex': getVolumIndex,
   'remapSelect': remapSelect,
   'indexGenerator': indexGenerator,
-  '_indexGenerator': _indexGenerator,
+  'axisGenerator': axisGenerator,
   'enummerate': enummerate,
-  'ravel': ravel
+  'ravel': ravel,
+  'range': range,
+  'shape': shape
 };
 module.exports = ndarray;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const nd = __webpack_require__(0);
+
+const Selector = {
+  get: function (d, selectString) {
+    let value = d.v,
+        shape = d.sh,
+        space = d.sp;
+    let selector = nd.remapSelect(selectString, shape);
+    let shapeNew = selector.map(d => d[2] ? 0 | (d[1] - d[0]) / d[2] : null).filter(d => d);
+    shapeNew = shapeNew.length == 0 ? [1] : shapeNew;
+    let valueNew = new Float32Array(nd.getVolume(shapeNew));
+    // console.warn('get',selectString, selector, shapeNew)
+    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, nd.getSpace(shape)))) {
+      const idx = px.idx,
+            vx = px.vx;
+      // console.warn(idx, vx);
+      valueNew[c] = value[vx];
+    }
+    return new numb(valueNew, shapeNew);
+  },
+  set: function (d, selectString, newValue) {
+    let value = d.v,
+        shape = d.sh,
+        space = d.sp;
+    const selector = nd.remapSelect(selectString, shape);
+    const getAtFunc = newValue => {
+      if (typeof newValue === 'numb') {
+        return { getAt: counter => newValue };
+      }
+      if (newValue instanceof Array) {
+        //TODO: implement check shape
+        let valueFlatten = nd.ravel(newValue);
+        return { getAt: counter => valueFlatten[counter] };
+      }
+      if (newValue.type === 'Numb') {
+        //TODO: implement check shape
+        let v = newValue.value;
+        return { getAt: counter => v[counter] };
+      }
+    };
+    const func = getAtFunc(newValue);
+    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, space))) {
+      let idx = px.idx,
+          vx = px.vx;
+      value[vx] = func.getAt(c);
+    }
+    return d;
+  }
+};
+function numb(value, shape) {
+  if (shape) {
+    this.shape = nd.shape(shape);
+    this.volume = nd.getVolume(this.shape);
+    this.space = nd.getSpace(this.shape);
+    if (Number.parseFloat(value)) {
+      let fvalue = Number.parseFloat(value);
+      this.value = new Float32Array(this.volume);
+      this.value.map(d => d = fvalue);
+    } else {
+      //TODO: it assumes value is float32array which is not safe
+      this.value = value;
+    }
+  } else if (value.length) {
+    // console.warn('value', value);
+    const _shape = nd.getShape(value);
+    this.shape = nd.clone(_shape);
+    this.volume = nd.getVolume(this.shape);
+    this.space = nd.getSpace(this.shape);
+    this.value = new Float32Array(this.volume);
+    const selector = this.shape.map(d => [0, d, 1]);
+    for (let [px, c] of nd.enummerate(nd.indexGenerator(selector, this.space))) {
+      let idx = px.idx,
+          vx = px.vx;
+      this.value[c] = idx.reduce((v, i) => v[i], value);
+    }
+  } else {
+    //TODO: this is op instance
+    throw Error('not support type');
+  }
+  this.type = 'Numb';
+  this.v = new Proxy({ v: this.value, sh: this.shape, sp: this.space }, Selector);
+}
+
+function Numb(value, shape) {
+  if (!Array.isArray(shape)) {
+    shape = null;
+  }
+  return new numb(value, shape);
+}
+
+if (true) {
+  module.exports = Numb;
+}
+if (typeof window !== 'undefined') {
+  window.Numb = Numb;
+}
+
+Numb.isNumb = nb => {
+  return nb.type === 'Numb' ? true : false;
+};
+
+numb.prototype.reshape = function (newShape) {
+  const newVolume = nd.getVolume(newShape);
+  if (newVolume !== this.volume) {
+    throw Error('shape is not consistent');
+  }
+  return new numb(this.value, newShape);
+};
+
+numb.prototype.tolist = function () {
+  let list = this.shape.slice().reverse().reduce((l, s) => {
+    let ll = l.reduce((d, v) => {
+      d.tmp.push(v);
+      if (d.tmp.length === s) {
+        d.t.push(d.tmp);
+        d.tmp = [];
+      }
+      return d;
+    }, { t: [], tmp: [] });
+    return ll.t;
+  }, this.value)[0];
+  return list;
+};
 
 /***/ }),
 /* 2 */
@@ -954,8 +989,8 @@ module.exports = ndarray;
 "use strict";
 
 
-const nd = __webpack_require__(1);
-const Number = __webpack_require__(0);
+const nd = __webpack_require__(0);
+const Numb = __webpack_require__(1);
 
 const Operators = {};
 
@@ -966,7 +1001,7 @@ Operators.dot = (nbA, nbB) => {
     for (let v = 0; v < nS; v++) {
       newValue[0] += nbA.value[v] * nbB.value[v];
     }
-    return Number(newValue, newShape);
+    return Numb(newValue, newShape);
   };
   const _dot$2d = (sA, sB, nS, pA, pB) => {
     let newShape = [sA[0], sB[1]];
@@ -984,9 +1019,9 @@ Operators.dot = (nbA, nbB) => {
         newValue[vx] += nbA.value[aVx] * nbB.value[bVx];
       }
     }
-    return Number(newValue, newShape);
+    return Numb(newValue, newShape);
   };
-  const _checkShapeThenRun = (ndA, ndB) => {
+  const _checkShapeThenRun2 = (ndA, ndB) => {
     const sA = nbA.shape,
           sB = nbB.shape;
     const pA = nbA.space,
@@ -1008,8 +1043,8 @@ Operators.dot = (nbA, nbB) => {
       }
       let newShape = [...sA.slice(0, -1), sB[1]];
       let newValue = new Float32Array(nd.getVolume(newShape));
-      let ret = Number(newValue, newShape);
-      console.log('newShape', newShape);
+      let ret = Numb(newValue, newShape);
+      // console.log('newShape', newShape);
       let selector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
       let leftSelect;
       for (let px of nd.indexGenerator(selector, sA)) {
@@ -1021,78 +1056,141 @@ Operators.dot = (nbA, nbB) => {
         ret.v[leftSelect] = _innerRet;
       }
       return ret;
-    } else if (sA.length > 2 && sB.length > 2) {
-      const sA$l = sA.length,
-            sB$l = sB.length;
-      const nS = sA[sA$l - 1] === sB[sB$l - 2] ? sA[sA$l - 1] : null;
+    }
+    // else if(sA.length == 2 && sB.length == 2){
+    //   const sA$l = sA.length;
+    //   const nS = sA[sA$l - 1]===sB[0]?sA[sA$l - 1]:null;
+    //   if(nS===null){ throw Error( 'shape not consitent' ) }  
+    //   let newShape = [ ...sA.slice(0,-1), sB[1] ];
+    //   let newValue = new Float32Array( nd.getVolume(newShape) );
+    //   let ret = Numb(newValue, newShape);   
+    //   // console.log('newShape', newShape);
+    //   let selector = sA.map((d,i)=>(i < (sA$l - 2))?[0,d,1]:d);
+    //   let leftSelect;
+    //   for(let px of nd.indexGenerator(selector, sA)){
+    //     leftSelect = px.idx.slice(0,-2).join(',') + ',:,:';
+    //     // console.warn('loop', leftSelect);
+    //     // console.warn(ndA.v[leftSelect]);
+    //     let _innerRet = Operators.dot(ndA.v[leftSelect], ndB);
+    //     // console.warn(_innerRet);
+    //     ret.v[leftSelect] = _innerRet;
+    //   }
+    //   return ret;
+    // }
+    else if (sA.length > 2 && sB.length > 2) {
+        const sA$l = sA.length,
+              sB$l = sB.length;
+        const nS = sA[sA$l - 1] === sB[sB$l - 2] ? sA[sA$l - 1] : null;
+        if (nS === null) {
+          throw Error('shape not consitent');
+        }
+        let newShape = [...sA.slice(0, -1), ...sB.slice(0, -2), ...sB.slice(-1)];
+        let newValue = new Float32Array(nd.getVolume(newShape));
+        let ret = Numb(newValue, newShape);
+        // console.log('newShape', newShape);
+        let leftSelector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
+        let rightSelector = sB.map((d, i) => i < sB$l - 2 ? [0, d, 1] : d);
+        let leftSelect, rightSelect, select;
+        for (let lpx of nd.indexGenerator(leftSelector, sA)) {
+          leftSelect = lpx.idx.slice(0, -2).join(',');
+          for (let rpx of nd.indexGenerator(rightSelector, sB)) {
+            rightSelect = rpx.idx.slice(0, -2).join(',');
+            select = leftSelect + ',:,' + rightSelect + ',:';
+            // console.warn('loop', leftSelect, rightSelect, select);  
+            let _innerRet = Operators.dot(ndA.v[leftSelect], ndB.v[rightSelect]);
+            // console.warn(_innerRet);
+            ret.v[select] = _innerRet;
+          }
+        }
+        return ret;
+      } else {
+        throw Error('shape not consitent');
+      }
+  };
+
+  const _checkShapeThenRun = (nbA, nbB) => {
+    const sA = nbA.shape,
+          sB = nbB.shape;
+    const pA = nbA.space,
+          pB = nbB.space;
+    if (sA.length == 1 && sB.length == 1) {
+      const nS = sA[0] === sB[0] ? sA[0] : null;
       if (nS === null) {
         throw Error('shape not consitent');
       }
-      let newShape = [...sA.slice(0, -1), ...sB.slice(0, -2), ...sB.slice(-1)];
-      let newValue = new Float32Array(nd.getVolume(newShape));
-      let ret = Number(newValue, newShape);
-      // console.log('newShape', newShape);
-      let leftSelector = sA.map((d, i) => i < sA$l - 2 ? [0, d, 1] : d);
-      let rightSelector = sB.map((d, i) => i < sB$l - 2 ? [0, d, 1] : d);
-      let leftSelect, rightSelect, select;
-      for (let lpx of nd.indexGenerator(leftSelector, sA)) {
-        leftSelect = lpx.idx.slice(0, -2).join(',');
-        for (let rpx of nd.indexGenerator(rightSelector, sB)) {
-          rightSelect = rpx.idx.slice(0, -2).join(',');
-          select = leftSelect + ',:,' + rightSelect + ',:';
-          // console.warn('loop', leftSelect, rightSelect, select);  
-          let _innerRet = Operators.dot(ndA.v[leftSelect], ndB.v[rightSelect]);
-          // console.warn(_innerRet);
-          ret.v[select] = _innerRet;
-        }
-      }
-      return ret;
-    } else {
-      throw Error('shape not consitent');
+      return _dot$1d(sA, sB, nS);
+    } else if (sA.length == 2 && sA.length == 2) {
+      const nS = sA[1] === sB[0] ? sA[1] : null;
+      return _dot$2d(sA, sB, nS, pA, pB);
     }
   };
 
-  let ret = _checkShapeThenRun(nbA, nbB);
+  let ret = _checkShapeThenRun2(nbA, nbB);
   return ret;
 };
 
-Operators.T = nbA => {
+Operators.T = (nbA, axis) => {
   // validateDotShape(a.shape,b.shape);
-  const sA = nbA.shape,
-        space = nbA.space;
-  let newShape = sA.slice().reverse();
+  const sA = nbA.shape;
+  let newShape = sA.slice(),
+      rAxisMap; //mapping from T axis to origin axis
+  axis = axis ? axis : null;
+  if (axis) {
+    [newShape, rAxisMap] = newShape.reduce((ss_ridx, d, i) => {
+      let [ss, raxis] = ss_ridx;
+      ss[axis.indexOf(i)] = d;
+      raxis[axis.indexOf(i)] = i;
+      return [ss, raxis];
+    }, [axis.slice(), {}]);
+  } else {
+    newShape = newShape.reverse();
+  }
+  if (nd.getVolume(newShape) !== nd.getVolume(sA)) {
+    throw Error('shape not consistent');
+  };
   let newValue = new Float32Array(nd.getVolume(newShape));
   const selector = newShape.map(d => [0, d, 1]);
+  const space = nbA.space;
   for (let px of nd.indexGenerator(selector, nd.getSpace(newShape))) {
     const idx = px.idx,
           vx = px.vx;
-    const rvx = idx.slice().reverse().reduce((s, d, i) => s + d * space[i], 0);
+    let ridx = idx.slice();
+    if (axis) {
+      //TODO: improve this code
+      ridx = ridx.reduce((ss, d, i) => {
+        ss[rAxisMap[i]] = d;
+        return ss;
+      }, idx.slice());
+    } else {
+      ridx = ridx.reverse();
+    }
+    const rvx = ridx.reduce((s, d, i) => s + d * space[i], 0);
     newValue[vx] = nbA.value[rvx];
   }
-  return Number(newValue, newShape);
+  return Numb(newValue, newShape);
 };
 
 Operators.pow = (nd, hat) => {
   let newValue = nd.value.map(d => Math.pow(d, hat));
-  let ret = Number(newValue, nd.shape);
+  let ret = Numb(newValue, nd.shape);
   return ret;
 };
 
 Operators.exp = nd => {
   let newValue = nd.value.map(d => Math.exp(d));
-  let ret = Number(newValue, nd.shape);
+  let ret = Numb(newValue, nd.shape);
   return ret;
 };
 
 Operators.tanh = nd => {
   let newValue = nd.value.map(d => Math.tanh(d));
-  let ret = Number(newValue, nd.shape);
+  let ret = Numb(newValue, nd.shape);
   return ret;
 };
 
 Operators.sigmoid = nd => {
   throw Error('not implement');
-  return Number(newValue, nd.shape);
+  return Numb(newValue, nd.shape);
 };
 
 Operators.relu = nd => {
@@ -1119,10 +1217,10 @@ const validateOps = (nbA, valB) => {
     return vB.map((d, i) => ops(d, nbA.value[0]));
   };
   // console.warn(typeof nbA, typeof valB);
-  if (Number().isNumber(nbA) && typeof valB === 'number') {
+  if (Numb.isNumb(nbA) && typeof valB === 'number') {
     return [numMapping, nbA.shape];
   }
-  if (Number().isNumber(nbA) && Number().isNumber(valB)) {
+  if (Numb.isNumb(nbA) && Numb.isNumb(valB)) {
     let nbB = valB;
     if (nbB.value.length == 1) {
       return [numMapping$2case1, nbA.shape];
@@ -1135,19 +1233,23 @@ const validateOps = (nbA, valB) => {
   throw Error('invalide object type');
 };
 
-Operators.add = (a, b) => {
+const add_primitive = (a, b) => {
+  console.warn('add primitive', a, b);
   const addOp = (d1, d2) => d1 + d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, addOp);
-  let ret = Number(newValue, newShape);
+  console.warn('new 3', newValue, newShape);
+  let ret = Numb(newValue, newShape);
   return ret;
 };
+
+Operators.add = add_primitive;
 
 Operators.minus = (a, b) => {
   const minusOp = (d1, d2) => d1 - d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, minusOp);
-  let ret = Number(newValue, newShape);
+  let ret = Numb(newValue, newShape);
   return ret;
 };
 
@@ -1155,31 +1257,47 @@ Operators.mul = (a, b) => {
   const mulOp = (d1, d2) => d1 * d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, mulOp);
-  return Number(newValue, newShape);
+  return Numb(newValue, newShape);
 };
 
 Operators.div = (a, b) => {
   const divOp = (d1, d2) => d1 / d2;
   const [mapping, newShape] = validateOps(a, b);
   let newValue = mapping(a, b, divOp);
-  return Number(newValue, newShape);
+  return Numb(newValue, newShape);
 };
 
-Operators.mean = (nb$0, axis) => {
+Operators.mean = (nbA, axis) => {
   //TODO: implement for axis selector
-  axis = axis ? axis : -1;
+  axis = axis ? axis : null;
   let ret;
-  if (axis === -1) {
-    const ll = nb$0.value.length;
+  if (axis === null) {
+    const ll = nbA.value.length;
     let newShape = [1];
     let newValue = new Float32Array(nd.getVolume(newShape));
-    newValue[0] = nb$0.value.reduce((s, v) => s += v, 0) / ll;
-    ret = Number(newValue, newShape);
+    newValue[0] = nbA.value.reduce((s, v) => s += v, 0) / ll;
+    ret = Numb(newValue, newShape);
   } else {
-    let selector = nb$0.shape.map((d, i) => i !== axis ? 0 : [0, d, 1]);
+    let Ash = nbA.shape;
+    let [newShape, selector] = Ash.reduce((ss, d, i) => {
+      if (i == axis) {
+        ss[0] = [...ss[0], i];
+      } else {
+        ss[1] = [...ss[1], d];
+      }
+      return ss;
+    }, [[], []]);
+    let ret = Numb(0, newShape);
+    for (idx of nd.axisGenerator([axis], newShape)) {
+      ret = Operators.add(ret, nbA.v[idx]);
+    }
+    let norm = Ash[axis];
+    ret = Operators.div(ret, norm);
   }
   return ret;
 };
+
+Operators.reduce = (nbA, aixs) => {};
 
 if (true) {
   module.exports = Operators;
@@ -1192,131 +1310,13 @@ if (typeof window !== 'undefined') {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-const Number = __webpack_require__(0);
-const nd = __webpack_require__(1);
-const Operators = __webpack_require__(2);
-const Op = Operators;
-const GradOps = {};
-
-if (true) {
-  module.exports = GradOps;
-}
-if (typeof window !== 'undefined') {
-  window.GradOps = GradOps;
-}
-
-GradOps.tanh = (ret, nd) => {
-  if (nd.grad) {
-    const vjp_op = x => 1 - Math.pow(Math.tanh(x), 2);
-    ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
-      vjp: Number(nd.value.map(d => vjp_op(d)), nd.shape) }];
-  }
-  return ret;
-};
-
-GradOps.add = (ret, nds) => {
-  ret.grad = nds.map((nd, i) => {
-    if (nd.grad) {
-      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
-        vjp: Number(nd.value.map(d => 1), nd.shape) };
-    }
-  }).filter(d => d);
-  return ret;
-};
-
-GradOps.minus = (ret, nds) => {
-  ret.grad = nds.map((nd, i) => {
-    if (nd.grad && i == 0) {
-      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
-        vjp: Number(nd.value.map(d => 1), nd.shape) };
-    }
-    if (nd.grad && i == 1) {
-      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
-        vjp: Number(nd.value.map(d => -1), nd.shape) };
-    }
-  }).filter(d => d);
-  return ret;
-};
-
-GradOps.dot = (ret, nbA, nbB) => {
-  let nbs = [nbA, nbB];
-  const nb0_grad = (ret, nd$0) => {
-    let sR = ret.shape,
-        s$0 = nd$0.shape;
-    let pR = ret.space,
-        p$0 = nd$0.space;
-    if (s$0.length == 1) {} else if (s$0.length == 2) {} else if (s$0.length > 2) {}
-  };
-  const nb1_grad = (ret, nd$1) => {
-    let sR = ret.shape,
-        s$0 = nd$1.shape;
-    let pR = ret.space,
-        p$0 = nd$1.space;
-    if (s$1.length == 1) {} else if (s$1.length == 2) {} else if (s$1.length > 2) {}
-  };
-  const transformRet = (ret, nb$0, nb$1) => {
-    let rS = ret.shape,
-        nb$0Shape = nb$0.shape,
-        nb$1Shape = nb$1.shape;
-    let leftSelector, rightSelector;
-    if (nb$0Shape.length > 2) {
-      leftSelector = nb$0.shape.slice(0, -2);
-    }
-    if (nb$1Shape.length > 2) {
-      rightSelector = nb$0.shape.slice(0, -2);
-    }
-    selector = leftSelector + ret.shape.slice(-2, -1) + rightSelector + ret.shape.slice(-1);
-    console.warn(selector);
-    for (let px of nb.inbexGenerator(selector, nb.getSpace())) {}
-    return ret;
-  };
-  // ret.transformRet = transformRet;
-
-  ret.grad = nbs.map((nb, i) => {
-    if (nb.grad) {
-      if (i == 0) {
-        return [{ bw: nb, vid: nb.grad[0].vid, vjp: nb0_grad }];
-      } else {
-        return [{ bw: nb, vid: nb.grad[0].vid, vjp: nb1_grad }];
-      }
-    }
-  }).filter(d => d);
-  return ret;
-};
-
-GradOps.pow = (ret, nb, hat) => {
-  if (nb.grad) {
-    const pow_grad = (bwGrad, nb) => {
-      return Op.mul(bwGrad, Op.mul(nb, hat));
-    };
-    ret.grad = [{ bw: nb, vid: nb.grad[0].vid, vjp: pow_grad }];
-  }
-  return ret;
-};
-
-GradOps.mean = (ret, nb, axis) => {
-  if (nb.grad) {
-    ret.grad = [{ bw: nb, vid: nb.grad[0].vid,
-      vjp: (bwGrad, nb) => {
-        const _length = nb.value.length;
-        const vjp_op = x => 1.0 / _length;
-        return Number(nb.value.map(d => vjp_op(d)), nb.shape);
-      } }];
-  }
-  return ret;
-};
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
 "use strict";
 
 
-const nd = __webpack_require__(1);
+const nd = __webpack_require__(0);
 const Ops = __webpack_require__(2);
-const Number = __webpack_require__(0);
-const GradOps = __webpack_require__(3);
+const Numb = __webpack_require__(1);
+const GradOps = __webpack_require__(4);
 
 const deepClone = data => data ? JSON.parse(JSON.stringify(data)) : null;
 
@@ -1360,14 +1360,16 @@ const backward = (outputGrad, inputGrads, debug) => {
     // console.warn(vjp);
     return vjp ? vjp(outputGrad, nb) : outputGrad;
   };
-  const runTransformBW = (outputGrad, inputGrads, transform) => {
-    // console.warn('transform', outputGrad.transformRet)
-    return transform ? transform(outputGrad, inputGrads) : outputGrad;
+  const runTransformBW = (outputGrad, op_inputs, transform) => {
+    // console.warn('transform', inputGrads, inputGrads.map(d=>d.op_inputs));
+    // return transform?transform(outputGrad, inputGrads): outputGrad;
+    return transform ? transform(outputGrad, op_inputs) : outputGrad;
   };
   const runBackWard = (outputGrad, inputGrads) => {
     if (inputGrads) {
-      let bwNb = runTransformBW(outputGrad, inputGrads, outputGrad.transformRet);
       let preGrads = inputGrads.map((g, idx) => {
+        const transformOp = outputGrad.transformRet;
+        let bwNb = runTransformBW(outputGrad, g.op_inputs, transformOp);
         let bw = g.bw,
             vjp = g.vjp,
             vid = g.vid;
@@ -1417,9 +1419,9 @@ for (let opName in Ops) {
 
 Autograd.grad = function (func) {
   const wrapper = (...inputs) => {
-    for (let [nd$0, c] of nd.enummerate(inputs)) {
-      if (Number().isNumber(nd$0) && nd$0.grad !== false) {
-        nd$0.grad = [{ vid: c, bw: null, vjp: null }];
+    for (let [nb$0, c] of nd.enummerate(inputs)) {
+      if (Numb.isNumb(nb$0) && nb$0.grad !== false) {
+        nb$0.grad = [{ vid: c, bw: null, vjp: null, input: nb$0 }];
       }
     }
     let nd$out = func(...inputs);
@@ -1440,6 +1442,176 @@ Autograd.grad = function (func) {
 };
 
 Autograd.backward = backward;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+const Numb = __webpack_require__(1);
+const nd = __webpack_require__(0);
+const Operators = __webpack_require__(2);
+const Op = Operators;
+const GradOps = {};
+
+if (true) {
+  module.exports = GradOps;
+}
+if (typeof window !== 'undefined') {
+  window.GradOps = GradOps;
+}
+
+GradOps.tanh = (ret, nd) => {
+  if (nd.grad) {
+    const vjp_op = x => 1 - Math.pow(Math.tanh(x), 2);
+    ret.grad = [{ bw: nd, vid: nd.grad[0].vid, elementWise: true,
+      vjp: Numb(nd.value.map(d => vjp_op(d)), nd.shape) }];
+  }
+  return ret;
+};
+
+GradOps.add = (ret, nds) => {
+  ret.grad = nds.map((nd, i) => {
+    if (nd.grad) {
+      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+        vjp: Numb(nd.value.map(d => 1), nd.shape) };
+    }
+  }).filter(d => d);
+  return ret;
+};
+
+GradOps.minus = (ret, nds) => {
+  ret.grad = nds.map((nd, i) => {
+    if (nd.grad && i == 0) {
+      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+        vjp: Numb(nd.value.map(d => 1), nd.shape) };
+    }
+    if (nd.grad && i == 1) {
+      return { bw: nd, vid: nd.grad[0].vid, elementWise: true,
+        vjp: Numb(nd.value.map(d => -1), nd.shape) };
+    }
+  }).filter(d => d);
+  return ret;
+};
+
+GradOps.dot = (ret, nbA, nbB) => {
+  let nbs = [nbA, nbB];
+  const nbA_grad = (ret, nbA) => {
+    let _sh = nbA.shape.map((d, i) => i);
+    let Taxis = [..._sh.slice(0, -2), ..._sh.slice(-1), ..._sh.slice(-2, -1)];
+    let retGrad = Ops.dot(Ops.T(nbA, Taxis), ret);
+    return Ops.T(retGrad, Taxis);
+  };
+
+  const nbB_grad = (ret, nbB) => {
+    let _sh = nbA.shape.map((d, i) => i);
+    let Taxis = [..._sh.slice(0, -2), ..._sh.slice(-1), ..._sh.slice(-2, -1)];
+    let retGrad = Ops.dot(Ops.T(nbA, Taxis), ret);
+    return retGrad;
+  };
+
+  const transformRet = (ret, op_inputs) => {
+    let rS = ret.shape.slice();
+    let nbA = op_inputs[0],
+        nbB = op_inputs[1];
+    if (rS.length <= 2) {
+      return ret;
+    } else {
+      //         console.warn(op_inputs, nbA, nbB);
+      let AShLen = nbA.shape.length,
+          BShLen = nbB.shape.length;
+      let _selAxis = [AShLen > 2 ? AShLen - 2 : 0, rS.length - 1];
+      let [selAxis, newShape] = rS.reduce((ss, d, i) => {
+        if (_selAxis.indexOf(i) == -1) {
+          ss[0] = [...ss[0], i];
+        } else {
+          ss[1] = [...ss[1], d];
+        }
+        return ss;
+      }, [[], []]);
+      let newValue = new Float32Array(nd.getVolume(newShape));
+      let reformedRet = Numb(newValue, newShape);
+      for (idx of nd.axisGenerator(selAxis, ret.shape)) {
+        reformedRet = Ops.add(reformedRet, ret.v[idx]);
+      }
+      //         console.warn(reformedRet)
+      return reformedRet;
+    }
+  };
+  ret.transformRet = transformRet;
+  ret.grad = nbs.map((nb, i) => {
+    const _bw = nb.grad ? nb : null;
+    const _vjp = i === 0 ? nbA_grad : nbB_grad;
+    const _vid = 0; //nb.grad[0].vid;
+    return { bw: _bw, vid: _vid, vjp: _vjp, op_inputs: nbs };
+  });
+  return ret;
+};
+
+GradOps.pow = (ret, nb, hat) => {
+  if (nb.grad) {
+    const pow_grad = (bwGrad, nb) => {
+      return Op.mul(bwGrad, Op.mul(nb, hat));
+    };
+    ret.grad = [{ bw: nb, vid: nb.grad[0].vid, vjp: pow_grad, op_inputs: [nb, hat] }];
+  }
+  return ret;
+};
+
+GradOps.mean = (ret, nb, axis) => {
+  if (nb.grad) {
+    ret.grad = [{ bw: nb, vid: nb.grad[0].vid,
+      vjp: (bwGrad, nb) => {
+        const _length = nb.value.length;
+        const vjp_op = x => 1.0 / _length;
+        return Numb(nb.value.map(d => vjp_op(d)), nb.shape);
+      } }];
+  }
+  return ret;
+};
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const clone = refValue => {
+  return refValue instanceof Array ? Object.assign([], refValue) : Object.assign({}, refValue);
+};
+const int = s => {
+  let i = Number.parseInt(s);
+  if (isNaN(i)) {
+    throw Error(`fail to convert ${s} to int`);
+  }
+  return i;
+};
+const float = s => {
+  let f = Number.parseFloat(s);
+  if (isNaN(f)) {
+    throw Error(`fail to convert ${s} to float`);
+  }
+  return f;
+};
+const validateIndex = (idx, size) => {
+  if (idx <= -size || idx >= size) {
+    throw Error(`index ${idx} is invalid with ${size}`);
+  }
+};
+const validateIndexRange = (l, h, st, size) => {
+  if (st > 0 && l > h && st > 0 && l > h) {
+    throw Error(` index range ${l}, ${h}, ${st} is invalid with ${size}`);
+  }
+};
+
+const utils = {
+  'int': int,
+  'float': float,
+  'clone': clone,
+  'validateIndex': validateIndex,
+  'validateIndexRange': validateIndexRange
+};
+module.exports = utils;
 
 /***/ })
 /******/ ]);

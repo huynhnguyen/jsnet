@@ -23,9 +23,9 @@ const PORT = 3000;
 const config = {
   entry: 
   {
-  	'lib/number'   :  __dirname + '/src/number/number.js',
-    'lib/operators':  __dirname + '/src/number/operators.js',
-    'lib/autograd':  __dirname + '/src/number/autograd/autograd.js'
+  	'lib/numb'   :  __dirname + '/src/numb/numb.js',
+    'lib/operators':  __dirname + '/src/numb/operators.js',
+    'lib/autograd':  __dirname + '/src/numb/autograd/autograd.js'
   },
   devtool: 'source-map',
   devServer: {

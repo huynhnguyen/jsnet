@@ -4,7 +4,7 @@
 	<title>Auto gradient</title>
 	
 </head>
-<body><script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/number.js"></script></body>
+<body><script type="text/javascript" src="/dist/lib/autograd.js"></script><script type="text/javascript" src="/dist/lib/operators.js"></script><script type="text/javascript" src="/dist/lib/numb.js"></script></body>
 <script type="text/javascript">
 	(()=>{
 		const Op = Autograd.Operators;
@@ -15,12 +15,12 @@
 			return grad(ndA);
 			
 		}
-		let ndA    = Number([[0,1],[1,2]]);
+		let ndA    = Numb([[0,1],[1,2]]);
 		let [ndGrad, ndRet] = gradOpt$1( Operators.mean, ndA );
 		console.table( ndGrad[0].tolist() );
 		// console.table( ndRet.tolist() );
 		// function test_grad_chain_2(){
-		// 	let nb = Number([[2,1],[3,4]]);
+		// 	let nb = Numb([[2,1],[3,4]]);
 		// 	console.table(nb.value);
 		// 	let nb$add2  = Operators.add(nb, 4);
 		// 	console.table(nb$add2.value);
@@ -33,9 +33,9 @@
 		// }
 		
 		// function test_grad_chain_1(){
-		// 	let nb  = Number([ [2,1,-1],
+		// 	let nb  = Numb([ [2,1,-1],
 		// 				   	   [3,4, 2] ]);
-		// 	let nb2 = Number([ [2,1,1, 2],
+		// 	let nb2 = Numb([ [2,1,1, 2],
 		// 					   [-1,3,4,3],
 		// 					   [4,2,2, 3] ]);
 		// 	nb2.grad = false;
@@ -49,9 +49,9 @@
 		// }
 
 		// function test_grad_mean_square_error(){
-		// 	let param  = Number([ 2,  1, -1 ]);
-		// 	let x      = Number([ 2, -1,  4 ]);
-		// 	let y = Number([ 2 ]);
+		// 	let param  = Numb([ 2,  1, -1 ]);
+		// 	let x      = Numb([ 2, -1,  4 ]);
+		// 	let y = Numb([ 2 ]);
 		// 	x.grad = false;
 		// 	y.grad = false;
 		// 	function myFunc(y, x, param){

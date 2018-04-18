@@ -1,7 +1,7 @@
 "use strict";
 const nd = require('../ndarray');
 const Ops  = require('../operators');
-const Numb = require('../Numb');
+const Numb = require('../numb');
 const GradOps = require('./gradOps');
 
 
@@ -105,7 +105,7 @@ for(let opName in Ops){
 Autograd.grad = function(func){
   const wrapper = (...inputs)=>{
     for( let [nb$0, c] of nd.enummerate(inputs) ) {
-      if(Numb().isNumb(nb$0) && nb$0.grad !== false){
+      if(Numb.isNumb(nb$0) && nb$0.grad !== false){
         nb$0.grad = [{ vid: c, bw: null, vjp:null, input: nb$0 }];
       }
     }
