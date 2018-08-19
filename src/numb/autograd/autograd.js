@@ -4,7 +4,7 @@ const Ops  = require('../operators');
 const Numb = require('../numb');
 const GradOps = require('./gradOps');
 
-
+//TODO:improve this code
 const deepClone = (data)=> data?JSON.parse(JSON.stringify(data)):null;
 
 const Autograd = {};

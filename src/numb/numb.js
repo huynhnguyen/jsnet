@@ -1,28 +1,37 @@
 "use strict";
 const nd = require('./ndarray');
+const U = require('./numb_utils');
+const T = require('./type');
 
-const Selector = {
+const NumSelector = {
   get:function(d, selectString){
-    let value = d.v, shape = d.sh, space = d.sp; 
-    let selector = nd.remapSelect(selectString, shape);
-    let shapeNew = selector.map( (d)=>(d[2])?0|((d[1]-d[0])/d[2]):null )
-                    .filter(d=>d);
-    shapeNew = shapeNew.length == 0?[1]:shapeNew;
-    let valueNew = new Float32Array(nd.getVolume(shapeNew));
-    // console.warn('get',selectString, selector, shapeNew)
-    for(let [px,c] of nd.enummerate( nd.indexGenerator(selector, 
-                                        nd.getSpace(shape) ) ) ){
-      const idx = px.idx, vx = px.vx;
-      // console.warn(idx, vx);
-      valueNew[c] = value[vx]; 
+    const checkTypeThenRun = (s, sel)=>{
+      if( typeof sel === 'symbol' || sel.match(/[a-z]/) ){ return s[sel]; }
+      let value = d.value, shape = d.shape, space = d.space; 
+      let selector = nd.remapSelect(selectString, shape);
+      let newShape = nd.getShapeFromSelector(selector);
+      let newValue = new Float32Array(newShape);
+      console.log( newValue, newShape, selector );
+      for(let [px,c] of 
+            nd.enummerate( nd.indexGenerator(selector, nd.getSpace(shape) ) ) ){
+        const idx = px.idx, vx = px.vx;
+        newValue[c] = value[vx]; 
+      }
+      return Number(newValue, newShape);
     }
-    return new numb(valueNew, shapeNew);
+    // let value = d.value, shape = d.shape, space = d.space; 
+    // let selector = nd.remapSelect(selectString, shape);
+    // let shapeNew = selector.map( (d)=>(d[2])?0|((d[1]-d[0])/d[2]):null )
+    //                 .filter(d=>d);
+    // shapeNew = shapeNew.length == 0?[1]:shapeNew;
+    // let valueNew = new Float32Array(nd.getVolume(shapeNew));
+    return checkTypeThenRun(d, selectString);
   },
   set:function(d, selectString, newValue){
-    let value = d.v, shape = d.sh, space = d.sp; 
+    let value = d.value, shape = d.shape, space = d.space; 
     const selector = nd.remapSelect(selectString, shape);
     const getAtFunc = (newValue)=>{
-      if( typeof newValue === 'numb' ){ return {getAt:(counter)=>newValue}; }
+      if( typeof newValue === 'number' ){ return {getAt:(counter)=>newValue}; }
       if(newValue instanceof Array){
         //TODO: implement check shape
         let valueFlatten = nd.ravel(newValue);
@@ -47,20 +56,11 @@ function numb(value, shape){
     this.shape  = nd.shape(shape);
     this.volume = nd.getVolume(this.shape);
     this.space  = nd.getSpace(this.shape);
-    if(Number.parseFloat(value)){
-      let fvalue = Number.parseFloat(value);
-      this.value = new Float32Array(this.volume);
-      this.value.map((d)=>d = fvalue);
-    }
-    else{
-      //TODO: it assumes value is float32array which is not safe
-      this.value  = value;
-    }
+    if(!Number.isNaN(+value)){ this.value.map((d)=>d = fvalue); }
+    else{ this.value  = value; }
   }
   else if(value.length){
-    // console.warn('value', value);
-    const _shape  = nd.getShape(value);
-    this.shape    = nd.clone(_shape);
+    this.shape  = nd.shape( nd.getShape(value) );
     this.volume = nd.getVolume(this.shape);
     this.space  = nd.getSpace(this.shape);
     this.value  = new Float32Array(this.volume);
@@ -71,17 +71,15 @@ function numb(value, shape){
     }
   }
   else{
-    //TODO: this is op instance
+    //TODO: check if value if valid
     throw Error('not support type');
   }
-  this.type = 'Numb'
-  this.v = new Proxy({v:this.value, sh:this.shape, sp: this.space}, Selector);
+  this.type = 'Numb';
 }
 
 
-function Numb(value, shape){
-  if( !Array.isArray(shape) ){ shape = null }
-  return new numb(value, shape);
+function Numb(value, shape=null){
+  return new Proxy( new numb(value, shape), NumSelector);
 }
 
 if (typeof module !== 'undefined') {
@@ -103,7 +101,7 @@ numb.prototype.reshape = function(newShape){
   return new numb(this.value, newShape);
 };
 
-numb.prototype.tolist = function(){
+numb.prototype.print = function(){
   let list = this.shape.slice().reverse().reduce((l,s)=>{
     let ll = l.reduce((d,v)=>{
               d.tmp.push(v);
@@ -114,5 +112,5 @@ numb.prototype.tolist = function(){
             },{t:[],tmp:[]});
     return ll.t;
   }, this.value)[0];
-  return list;
+  console.log(list);
 }

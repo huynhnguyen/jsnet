@@ -1,5 +1,17 @@
 "use strict";
 const U = require('./ndarray_utils');
+const T = require('./type');
+
+const range = (fr, to, st=1)=>{
+  let ret = [];
+  if( st > 0 ){
+    for(let c = fr; c <  to; c+=st ){ ret = [...ret, c]; }  
+  }
+  else{
+    for(let c = fr; c >= to; c+=st ){ ret = [...ret, c]; }  
+  }
+  return ret;
+}
 
 const pIndex = (idx, size) => (idx>-1)?idx:size + idx 
 
@@ -8,46 +20,62 @@ const remapIndex = (idx,size) => {
   return pIndex(idx, size);
 }
 
+const remapIndexRange = (sRange, size)=>{
+  const getRangeFromString = (sRange, size)=>{
+    let mm = sRange.match(/^:$|(-?\d+)?:?(-?\d+)?:?(-?\d+)?/);
+    let [m, fr, to, st] = mm?mm:[0,0,0,0];//if match fail, return all zero
+    if( m === ':' ){ [fr, to, st] = [0,size,1]; }
+    else{
+      st = st?T.int(st):1; 
+      fr = fr?pIndex(T.int(fr), size):(st>0)?0:(size - 1);
+      to = to?pIndex(T.int(to), size):(st>0)?size:0;
+    }
+    return [fr, to, st];  
+  }
+  let [fr, to, st] = getRangeFromString(sRange, size);
+  U.validateIndexRange(fr, to, st, size);
+  return [fr, to, st];
+}
+
+
 const remapSelect = (sval, shape)=>{
   //numpy like selector
   const vsp = sval.split(',');
   const select = shape.map( (size, i)=>{
-    let v = (i<vsp.length)?vsp[i]:`0:${size}:1`;
-    console.log('v', v)
-    if( Number.isNaN(v) ) { 
-      console.log( 's',  v.split(':') );
-      // let [l,h,st] = v.split(':').map(d=>{ return Number(d) });
-      st = st?st:1;
-      U.validateIndexRange(l, h, st, size);
-      return [l, h, st];
-    }
-    else { 
-      return remapIndex( Number(v), size ); 
-    } 
+    let idxRange = vsp[i]?vsp[i]:`0:${size}:1`;
+    return T.isNumber(idxRange)?
+      remapIndex(idxRange, size):remapIndexRange(idxRange, size);
   });
   return select;
 }
 
 const shapeSelector = {
     get: function(s, sel){
-        if( typeof sel !== 'symbol' && Number(sel)){
-          let psel = remapIndex( Number(sel), s.length );
-          return s.slice()[psel];  
+        const checkTypeThenRun = (s, sel)=>{
+          if( typeof sel === 'symbol' || sel.match(/[a-z]/) ){ return s[sel]; }
+          if( T.isNumber(sel) ){//T.T javascript 
+            let pIdx = remapIndex(sel, s.length);
+            return s[pIdx];
+          }
+          else{
+            let [fr, to, st] = remapIndexRange(sel, s.length);
+            let ret = range(fr, to, st).map(d=>s[d]);
+            return ret;
+          }
         }
-        else{
-          return s.slice()[sel];
-        }
+        let ret = checkTypeThenRun(s, sel);
+        return Array.isArray(ret)?shape(ret):ret;
     },
     set: function(s,sel,val){
-        sel = Number(sel) >= 0?sel:s.length + Number(sel);
+        sel = T.int(sel) >= 0?sel:s.length + T.int(sel);
         s[sel] = val;
         return s;
     }
 }
 
 const shape = (sh)=>{
-    let _sh = sh.slice();
-    return new Proxy(_sh,shapeSelector);
+  let _sh = sh.slice();
+  return new Proxy( _sh, shapeSelector );
 }
 
 const getShape  = (arr)=>(Array.isArray(arr))?
@@ -59,24 +87,34 @@ const getSpace = (shape)=>shape.length==0?
         [1]:[ ss[0]*shape[i+1],...ss],[]
 		)
 
-const getVolume = (shape)=>shape.length==0?[]:shape.reduce((a,b)=>a*b);
-const getVolumIndex = (idx, space)=> idx.reduce((s,d,i)=>s+d*space[i],0); 
+const getShapeFromSelector = (selector)=>{
+  return selector.map((idxRange,i)=>{
+          if(idxRange.length){
+            let [fr, to, st] = idxRange;
+            return st>0?Math.floor((to - fr)/st):Math.floor((1 + to - fr)/st);
+          }
+          else{ return 0; }
+        }).filter(d=>d);//remove zero
+}
 
-function *indexGenerator(selector, space, axis, idx){
-  axis = axis | 0;
-  idx = (idx)?idx:selector.map(()=>0);
-  const l = selector[axis][0]|selector[axis],
-        h = selector[axis][1]?selector[axis][1]:l+1,
-        s = selector[axis][2]?selector[axis][2]:1;
-  idx[axis] = l;
-  while(s>0?(idx[axis] < h):false){
-    if(axis+1<selector.length){
-      yield *indexGenerator(selector,space,axis+1,idx);
-      idx[axis] += s;
-    }
-    else{
-      yield {idx:idx,vx:idx.reduce((s,d,i)=>s+d*space[i],0)};
-      idx[axis] += s;
+const getVolume = (shape)=>shape.length==0?0:shape.reduce((a,b)=>a*b);
+const getVolumIndex = (idx, space)=>idx.reduce((s,d,i)=>s+d*space[i],0); 
+
+function *indexGenerator(selector, shape){
+  let space = getSpace( shape );
+  let rselector = selector
+    .map(d=>T.isArray(d)?d:[d, d+1, 1]).reverse();
+  console.log(rselector);
+  let index = selector.map(d=>d[0]);
+  let ridx = [], _idx = [];
+  for(let axis of rselector.map((d,i)=>i)){
+    console.log( axis, rselector );
+    ridx = index.slice();
+    for(let ix of range(...selector) ){
+      ridx[axis] = ix;
+      _idx = ridx.slice().reverse();
+      console.log( _idx );
+      yield { idx: _idx.join(), vx: getVolumIndex(_idx, space) }
     }
   }
 }
@@ -107,19 +145,12 @@ const ravel = (a) => a.reduce((s,a)=>{
 		return (a instanceof Array)?s.concat(ravel(a)):s.concat(a)
 	},[]);
 
-const range = (l, h, st)=>{
-  st = st?st:1;
-  [l, h] = h?[l,h]:[0,l];
-  for(let c = l; c < h; c += st){ 
-      console.warn(c)
-      ret = [...ret, c]; }
-  return ret;
-}
 
 const ndarray = {
 	'getShape' : getShape,
 	'getSpace' : getSpace,
 	'getVolume': getVolume,
+  'getShapeFromSelector': getShapeFromSelector,
   'getVolumIndex': getVolumIndex,
 	'remapSelect': remapSelect,
 	'indexGenerator': indexGenerator,
